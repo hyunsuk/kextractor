@@ -40,7 +40,7 @@ func fileReader(path string) {
 			lineText := scanner.Text()
 			matched, err := regexp.MatchString("\\p{Hangul}", lineText)
 
-			if err = scanner.Err(); err != nil {
+			if err != nil {
 				log.Fatal(err)
 			}
 
@@ -63,6 +63,7 @@ func fileReader(path string) {
 		if err = scanner.Err(); err != nil {
 			log.Fatal(err)
 		}
+
 	} else {
 		log.Fatal(err)
 	}
