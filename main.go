@@ -61,6 +61,7 @@ func fileReader(path string) {
 		}
 
 		if err = scanner.Err(); err != nil {
+			log.Println(path)
 			log.Fatal(err)
 		}
 
