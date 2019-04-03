@@ -102,8 +102,8 @@ func init() {
 		"javascript": "\\s*[//|/*]\\s*",
 	}
 	skipPaths = map[string]string{
-		"test_path": "functional_test",
-		"git":       ".git",
+		"test": "test",
+		"git":  ".git",
 	}
 }
 
