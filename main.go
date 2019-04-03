@@ -11,68 +11,70 @@ import (
 	"strings"
 )
 
-var fileExt string
-var filePaths []string
-var commets map[string]string
-var ignorePaths map[string]string
+var comments map[string]string
+var skipPaths map[string]string
 
-func procFile(path string, f os.FileInfo, err error) error {
+func scanKorean(path string) {
+	fmt.Printf("[%s] scanning Korean character in file\n", path)
+	f, err := os.Open(path)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
-	if f.IsDir() || isIgnorePath(path) {
-		return nil
-	}
+	defer f.Close()
 
-	if fileExt == "" {
-		filePaths = append(filePaths, path)
-	} else {
-		v := strings.Split(f.Name(), ".")
-		if v[len(v)-1] == fileExt {
-			filePaths = append(filePaths, path)
+	scannedLine := 1
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if isComment(line) {
+			scannedLine++
+			continue
 		}
+
+		matched, err := regexp.MatchString("\\p{Hangul}", line)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if matched {
+			fmt.Printf("%d :  %v\n", scannedLine, line)
+		}
+		scannedLine++
 	}
-	return nil
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("[%s] scanning error - %s\n", path, err)
+	}
 }
 
-func fileReader(path string) {
-	fmt.Printf("[%s] file scanning\n", path)
-	if f, err := os.Open(path); err != nil {
-		log.Fatal(err)
-
-	} else {
-		defer f.Close()
-
-		scanner := bufio.NewScanner(f)
-		n := 1
-
-		for scanner.Scan() {
-			line := scanner.Text()
-			if isComment(line) {
-				n++
-				continue
-			}
-
-			matched, err := regexp.MatchString("\\p{Hangul}", line)
+func search(dir string, filterByFileExt string) ([]string, error) {
+	var resultPaths []string
+	err := filepath.Walk(dir,
+		func(path string, f os.FileInfo, err error) error {
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
-			if matched {
-				fmt.Printf("%d :  %v\n", n, line)
+
+			if f.IsDir() || isSkipPath(path) {
+				return nil
 			}
-			n++
-		}
 
-		if err := scanner.Err(); err != nil {
-			log.Printf("[%s] file scan error - %s\n", path, err)
-		}
+			if filterByFileExt != "" {
+				v := strings.Split(f.Name(), ".")
+				if v[len(v)-1] == filterByFileExt {
+					resultPaths = append(resultPaths, path)
+				}
+				return nil
+			}
 
-	}
+			resultPaths = append(resultPaths, path)
+			return nil
+		})
+	return resultPaths, err
 }
 
 func isComment(s string) bool {
-	for _, v := range commets {
+	for _, v := range comments {
 		if matched, err := regexp.MatchString(v, s); err != nil {
 			log.Fatal(err)
 		} else if matched {
@@ -82,8 +84,8 @@ func isComment(s string) bool {
 	return false
 }
 
-func isIgnorePath(s string) bool {
-	for _, v := range ignorePaths {
+func isSkipPath(s string) bool {
+	for _, v := range skipPaths {
 		if matched, err := regexp.MatchString(v, s); err != nil {
 			log.Fatal(err)
 		} else if matched {
@@ -94,12 +96,12 @@ func isIgnorePath(s string) bool {
 }
 
 func init() {
-	commets = map[string]string{
+	comments = map[string]string{
 		"python":     "\\s*#\\s*",
 		"html":       "\\s*<!--\\s*|.*-->$",
 		"javascript": "\\s*[//|/*]\\s*",
 	}
-	ignorePaths = map[string]string{
+	skipPaths = map[string]string{
 		"test_path": "functional_test",
 		"git":       ".git",
 	}
@@ -107,32 +109,32 @@ func init() {
 
 func main() {
 	flag.Parse()
-	dirPath := flag.Arg(1)
-	fileExt = flag.Arg(0)
+	filterByFileExt := flag.Arg(0)
+	dirPathToSearch := flag.Arg(1)
 
-	if dirPath == "" {
+	if dirPathToSearch == "" {
 		currentDir, err := os.Getwd()
 		if err != nil {
 			log.Fatal(err)
 		}
-		dirPath = currentDir
+		dirPathToSearch = currentDir
 	}
 
-	dirInfo, err := os.Stat(dirPath)
+	dirInfo, err := os.Stat(dirPathToSearch)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if !dirInfo.IsDir() {
-		log.Fatalf("'%s' must be directory", dirPath)
+		log.Fatalf("'%s' must be directory", dirPathToSearch)
 	}
 
-	err = filepath.Walk(dirPath, procFile)
+	resultPaths, err := search(dirPathToSearch, filterByFileExt)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, filePath := range filePaths {
-		fileReader(filePath)
+	for _, filePath := range resultPaths {
+		scanKorean(filePath)
 	}
 }
