@@ -11,43 +11,54 @@ import (
 	"strings"
 )
 
-var comments map[string]string
-var skipPaths map[string]string
+var (
+	comments  map[string]string
+	skipPaths map[string]string
+	verbose   = flag.Bool("v", false, "Make some output more verbose.")
+)
 
-func scanKorean(path string) {
-	fmt.Printf("[%s] scanning Korean character in file\n", path)
+type scannedFileData struct {
+	path                  string
+	linesContainingKorean map[int]string
+}
+
+func scanKorean(path string) (scannedFileData, error) {
+	fileData := scannedFileData{path, map[int]string{}}
+
 	f, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		return fileData, err
 	}
 
 	defer f.Close()
 
-	scannedLine := 1
+	lineNumber := 1
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		line := scanner.Text()
-		if isComment(line) {
-			scannedLine++
+		lineText := scanner.Text()
+		if isComment(lineText) {
+			lineNumber++
 			continue
 		}
 
-		matched, err := regexp.MatchString("\\p{Hangul}", line)
+		matched, err := regexp.MatchString("\\p{Hangul}", lineText)
 		if err != nil {
-			log.Fatal(err)
+			return fileData, err
 		}
 		if matched {
-			fmt.Printf("%d :  %v\n", scannedLine, line)
+			fileData.linesContainingKorean[lineNumber] = lineText
 		}
-		scannedLine++
+		lineNumber++
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Printf("[%s] scanning error - %s\n", path, err)
+		return fileData, err
 	}
+
+	return fileData, nil
 }
 
-func search(dir string, filterByFileExt string) ([]string, error) {
+func search(dir string, filterByFileExt string) (*[]string, error) {
 	var resultPaths []string
 	err := filepath.Walk(dir,
 		func(path string, f os.FileInfo, err error) error {
@@ -70,7 +81,16 @@ func search(dir string, filterByFileExt string) ([]string, error) {
 			resultPaths = append(resultPaths, path)
 			return nil
 		})
-	return resultPaths, err
+	return &resultPaths, err
+}
+
+func report(files *[]scannedFileData) {
+	for _, f := range *files {
+		fmt.Println(f.path)
+		for n, t := range f.linesContainingKorean {
+			fmt.Printf("%d: %s\n", n, t)
+		}
+	}
 }
 
 func isComment(s string) bool {
@@ -134,7 +154,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for _, filePath := range resultPaths {
-		scanKorean(filePath)
+	filesContainingKorean := []scannedFileData{}
+	for _, filePath := range *resultPaths {
+		if *verbose {
+			fmt.Printf("[%s] scanning Korean character in file\n", filePath)
+		}
+		data, err := scanKorean(filePath)
+		if len(data.linesContainingKorean) > 0 {
+			filesContainingKorean = append(filesContainingKorean, data)
+		}
+
+		if err != nil {
+			fmt.Printf("[%s] scanning error - %s\n", filePath, err)
+		}
 	}
+
+	report(&filesContainingKorean)
 }
