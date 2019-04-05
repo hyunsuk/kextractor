@@ -84,13 +84,16 @@ func search(dir string, filterByFileExt string) (*[]string, error) {
 	return &resultPaths, err
 }
 
-func report(files *[]scannedFileData) {
+func report(FilteredFilesCount int, scanErrorCount int, files *[]scannedFileData) {
 	for _, f := range *files {
 		fmt.Println(f.path)
 		for n, t := range f.linesContainingKorean {
 			fmt.Printf("%d: %s\n", n, t)
 		}
 	}
+	fmt.Printf("[%d] scanning files\n", FilteredFilesCount)
+	fmt.Printf("[%d] scanning error files\n", scanErrorCount)
+	fmt.Printf("[%d] files containing korean\n", len(*files))
 }
 
 func isComment(s string) bool {
@@ -155,6 +158,7 @@ func main() {
 	}
 
 	filesContainingKorean := []scannedFileData{}
+	scanError := 0
 	for _, filePath := range *resultPaths {
 		if *verbose {
 			fmt.Printf("[%s] scanning Korean character in file\n", filePath)
@@ -165,9 +169,12 @@ func main() {
 		}
 
 		if err != nil {
-			fmt.Printf("[%s] scanning error - %s\n", filePath, err)
+			scanError++
+			if *verbose {
+				fmt.Printf("[%s] scanning error - %s\n", filePath, err)
+			}
 		}
 	}
 
-	report(&filesContainingKorean)
+	report(len(*resultPaths), scanError, &filesContainingKorean)
 }
