@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"regexp"
-	"strings"
+
+	"github.com/loganstone/kextractor/file"
 )
 
 var (
@@ -17,77 +16,10 @@ var (
 	verbose   = flag.Bool("v", false, "Make some output more verbose.")
 )
 
-type scannedFileData struct {
-	path                  string
-	linesContainingKorean map[int]string
-}
-
-func scanKorean(path string) (scannedFileData, error) {
-	fileData := scannedFileData{path, map[int]string{}}
-
-	f, err := os.Open(path)
-	if err != nil {
-		return fileData, err
-	}
-
-	defer f.Close()
-
-	lineNumber := 1
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		lineText := scanner.Text()
-		if isComment(lineText) {
-			lineNumber++
-			continue
-		}
-
-		matched, err := regexp.MatchString("\\p{Hangul}", lineText)
-		if err != nil {
-			return fileData, err
-		}
-		if matched {
-			fileData.linesContainingKorean[lineNumber] = lineText
-		}
-		lineNumber++
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fileData, err
-	}
-
-	return fileData, nil
-}
-
-func search(dir string, filterByFileExt string) (*[]string, error) {
-	var resultPaths []string
-	err := filepath.Walk(dir,
-		func(path string, f os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if f.IsDir() || isSkipPath(path) {
-				return nil
-			}
-
-			if filterByFileExt != "" {
-				v := strings.Split(f.Name(), ".")
-				if v[len(v)-1] == filterByFileExt {
-					resultPaths = append(resultPaths, path)
-				}
-				return nil
-			}
-
-			resultPaths = append(resultPaths, path)
-			return nil
-		})
-	return &resultPaths, err
-}
-
-func report(FilteredFilesCount int, scanErrorCount int, files *[]scannedFileData) {
+func report(FilteredFilesCount int, scanErrorCount int, files *[]file.Data) {
 	for _, f := range *files {
-		fmt.Println(f.path)
-		for n, t := range f.linesContainingKorean {
+		fmt.Println(f.Path())
+		for n, t := range *f.MatchedLine() {
 			fmt.Printf("%d: %s\n", n, t)
 		}
 	}
@@ -152,27 +84,27 @@ func main() {
 		log.Fatalf("'%s' must be directory", dirPathToSearch)
 	}
 
-	resultPaths, err := search(dirPathToSearch, filterByFileExt)
+	resultPaths, err := file.Search(dirPathToSearch, filterByFileExt, isSkipPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	filesContainingKorean := []scannedFileData{}
+	filesContainingKorean := []file.Data{}
 	scanError := 0
 	for _, filePath := range *resultPaths {
 		if *verbose {
 			fmt.Printf("[%s] scanning Korean character in file\n", filePath)
 		}
-		data, err := scanKorean(filePath)
-		if len(data.linesContainingKorean) > 0 {
-			filesContainingKorean = append(filesContainingKorean, data)
-		}
-
+		fileData := file.New(filePath, "\\p{Hangul}")
+		err := fileData.Scan(isComment)
 		if err != nil {
 			scanError++
 			if *verbose {
 				fmt.Printf("[%s] scanning error - %s\n", filePath, err)
 			}
+		}
+		if fileData.HasMatchedString() {
+			filesContainingKorean = append(filesContainingKorean, (*fileData))
 		}
 	}
 
