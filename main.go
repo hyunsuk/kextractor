@@ -84,17 +84,16 @@ func main() {
 		log.Fatalf("'%s' must be directory", dirPathToSearch)
 	}
 
-	resultPaths := []string{}
-	chann := file.Search(dirPathToSearch, filterByFileExt, isSkipPath)
-	for path := range chann {
-		resultPaths = append(resultPaths, path)
+	resultPaths, err := file.Search(dirPathToSearch, filterByFileExt, isSkipPath)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	filesContainingKorean := []file.Data{}
-	ch := make(chan *file.Data)
+	cp := make(chan *file.Data)
 
 	scanError := 0
-	for _, filePath := range resultPaths {
+	for _, filePath := range *resultPaths {
 		if *verbose {
 			fmt.Printf("[%s] scanning Korean character in file\n", filePath)
 		}
@@ -102,12 +101,12 @@ func main() {
 		go func(filePath string) {
 			fileData := file.New(filePath, "\\p{Hangul}")
 			fileData.Scan(isComment)
-			ch <- fileData
+			cp <- fileData
 		}(filePath)
 	}
 
-	for i := 0; i < len(resultPaths); i++ {
-		fileData := <-ch
+	for i := 0; i < len(*resultPaths); i++ {
+		fileData := <-cp
 		if fileData.ScanError != nil {
 			scanError++
 			if *verbose {
@@ -119,5 +118,5 @@ func main() {
 		}
 	}
 
-	report(len(resultPaths), scanError, &filesContainingKorean)
+	report(len(*resultPaths), scanError, &filesContainingKorean)
 }

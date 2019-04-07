@@ -81,30 +81,27 @@ func (d *Data) MatchedLine() *map[int]string {
 }
 
 // Search ...
-func Search(dir string, filterByFileExt string, fn isSkipPath) chan string {
-	chann := make(chan string)
-	go func() {
-		filepath.Walk(dir,
-			func(path string, f os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
+func Search(dir string, filterByFileExt string, fn isSkipPath) (*[]string, error) {
+	var resultPaths []string
+	err := filepath.Walk(dir,
+		func(path string, f os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
 
-				if f.IsDir() || fn(path) {
-					return nil
-				}
-
-				if filterByFileExt != "" {
-					v := strings.Split(f.Name(), ".")
-					if v[len(v)-1] == filterByFileExt {
-						chann <- path
-					}
-					return nil
-				}
-				chann <- path
+			if f.IsDir() || fn(path) {
 				return nil
-			})
-		defer close(chann)
-	}()
-	return chann
+			}
+
+			if filterByFileExt != "" {
+				v := strings.Split(f.Name(), ".")
+				if v[len(v)-1] == filterByFileExt {
+					resultPaths = append(resultPaths, path)
+				}
+				return nil
+			}
+			resultPaths = append(resultPaths, path)
+			return nil
+		})
+	return &resultPaths, err
 }
