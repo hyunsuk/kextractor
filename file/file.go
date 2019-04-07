@@ -17,18 +17,20 @@ type Data struct {
 	matchString                string
 	linesContainingMatchString map[int]string
 	isScanned                  bool
+	ScanError                  error
 }
 
 // New ...
 func New(path string, matchString string) *Data {
-	return &Data{path, matchString, map[int]string{}, false}
+	return &Data{path, matchString, map[int]string{}, false, nil}
 }
 
 // Scan ...
-func (d *Data) Scan(fn isComment) error {
+func (d *Data) Scan(fn isComment) {
 	f, err := os.Open(d.path)
 	if err != nil {
-		return err
+		d.ScanError = err
+		return
 	}
 
 	defer f.Close()
@@ -45,7 +47,8 @@ func (d *Data) Scan(fn isComment) error {
 
 		matched, err := regexp.MatchString(d.matchString, lineText)
 		if err != nil {
-			return err
+			d.ScanError = err
+			return
 		}
 		if matched {
 			d.linesContainingMatchString[lineNumber] = lineText
@@ -54,9 +57,9 @@ func (d *Data) Scan(fn isComment) error {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return err
+		d.ScanError = err
+		return
 	}
-	return nil
 }
 
 // HasMatchedString ...

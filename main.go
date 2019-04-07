@@ -90,17 +90,27 @@ func main() {
 	}
 
 	filesContainingKorean := []file.Data{}
+	ch := make(chan *file.Data)
+
 	scanError := 0
 	for _, filePath := range *resultPaths {
 		if *verbose {
 			fmt.Printf("[%s] scanning Korean character in file\n", filePath)
 		}
-		fileData := file.New(filePath, "\\p{Hangul}")
-		err := fileData.Scan(isComment)
-		if err != nil {
+
+		go func(filePath string) {
+			fileData := file.New(filePath, "\\p{Hangul}")
+			fileData.Scan(isComment)
+			ch <- fileData
+		}(filePath)
+	}
+
+	for i := 0; i < len(*resultPaths); i++ {
+		fileData := <-ch
+		if fileData.ScanError != nil {
 			scanError++
 			if *verbose {
-				fmt.Printf("[%s] scanning error - %s\n", filePath, err)
+				fmt.Printf("[%s] scanning error - %s\n", fileData.Path(), fileData.ScanError)
 			}
 		}
 		if fileData.HasMatchedString() {
