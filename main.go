@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/loganstone/kextractor/file"
 )
@@ -16,15 +18,16 @@ var (
 	verbose   = flag.Bool("v", false, "Make some output more verbose.")
 )
 
-func report(FilteredFilesCount int, scanErrorCount int, files *[]file.Data) {
+func report(filteredFilesCount int, scanErrorCount int, files *[]file.Data) {
 	for _, f := range *files {
 		fmt.Println(f.Path())
 		for n, t := range *f.MatchedLine() {
 			fmt.Printf("%d: %s\n", n, t)
 		}
 	}
-	fmt.Printf("[%d] scanning files\n", FilteredFilesCount)
-	fmt.Printf("[%d] scanning error files\n", scanErrorCount)
+	fmt.Printf("[%d] scanning files\n", filteredFilesCount)
+	fmt.Printf("[%d] error \n", scanErrorCount)
+	fmt.Printf("[%d] success \n", filteredFilesCount-scanErrorCount)
 	fmt.Printf("[%d] files containing korean\n", len(*files))
 }
 
@@ -48,6 +51,24 @@ func isSkipPath(s string) bool {
 		}
 	}
 	return false
+}
+
+func shouldScan(foundFilesCount int) bool {
+	var response string
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("found files [%d]. do you want to scan it? (y/n): ", foundFilesCount)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+	}
+	response = strings.Trim(response, " \n")
+	if response != "y" && response != "n" {
+		return shouldScan(foundFilesCount)
+	}
+	if response == "n" {
+		return false
+	}
+	return true
 }
 
 func init() {
@@ -89,16 +110,20 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if !shouldScan(len(*resultPaths)) {
+		os.Exit(0)
+	}
+
 	filesContainingKorean := []file.Data{}
 	cp := make(chan *file.Data)
 
-	scanError := 0
+	scanErrorCount := 0
 	for _, filePath := range *resultPaths {
-		if *verbose {
-			fmt.Printf("[%s] scanning Korean character in file\n", filePath)
-		}
-
 		go func(filePath string) {
+			if *verbose {
+				fmt.Printf("[%s] scanning Korean character in file\n", filePath)
+			}
+
 			fileData := file.New(filePath, "\\p{Hangul}")
 			fileData.Scan(isComment)
 			cp <- fileData
@@ -108,7 +133,7 @@ func main() {
 	for i := 0; i < len(*resultPaths); i++ {
 		fileData := <-cp
 		if fileData.ScanError != nil {
-			scanError++
+			scanErrorCount++
 			if *verbose {
 				fmt.Printf("[%s] scanning error - %s\n", fileData.Path(), fileData.ScanError)
 			}
@@ -118,5 +143,5 @@ func main() {
 		}
 	}
 
-	report(len(*resultPaths), scanError, &filesContainingKorean)
+	report(len(*resultPaths), scanErrorCount, &filesContainingKorean)
 }

@@ -2,6 +2,7 @@ package file
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -35,7 +36,6 @@ func (d *Data) Scan(fn isComment) {
 
 	defer f.Close()
 
-	d.isScanned = true
 	lineNumber := 1
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
@@ -60,6 +60,7 @@ func (d *Data) Scan(fn isComment) {
 		d.ScanError = err
 		return
 	}
+	d.isScanned = true
 }
 
 // HasMatchedString ...
@@ -82,6 +83,7 @@ func (d *Data) MatchedLine() *map[int]string {
 
 // Search ...
 func Search(dir string, filterByFileExt string, fn isSkipPath) (*[]string, error) {
+	fmt.Printf("search for files [*.%s] in [%s] directory.\n", filterByFileExt, dir)
 	var resultPaths []string
 	err := filepath.Walk(dir,
 		func(path string, f os.FileInfo, err error) error {
