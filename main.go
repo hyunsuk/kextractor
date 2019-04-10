@@ -128,23 +128,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	cp := make(chan *file.Data)
-	for _, filePath := range *resultPaths {
-		go func(filePath string) {
-			if *verbose {
-				fmt.Printf("[%s] scanning Korean character in file\n", filePath)
-			}
-
-			fileData := file.New(filePath, "\\p{Hangul}")
-			fileData.Scan(isComment)
-			cp <- fileData
-		}(filePath)
-	}
-
 	filesContainingKorean := []file.Data{}
 	scanErrorCount := 0
-	for i := 0; i < len(*resultPaths); i++ {
-		fileData := <-cp
+	for fileData := range file.ScanKorean(resultPaths, *verbose, isComment) {
 		if fileData.ScanError != nil {
 			scanErrorCount++
 			if *verbose || *errorOnly {

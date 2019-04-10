@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -117,4 +118,30 @@ func Limit() (uint64, error) {
 		return 0, err
 	}
 	return rLimit.Cur, nil
+}
+
+// ScanKorean ...
+func ScanKorean(filePaths *[]string, verbose bool, fn isComment) <-chan *Data {
+	cp := make(chan *Data)
+	var wg sync.WaitGroup
+	wg.Add(len(*filePaths))
+
+	for _, filePath := range *filePaths {
+		go func(filePath string) {
+			defer wg.Done()
+			if verbose {
+				fmt.Printf("[%s] scanning Korean character in file\n", filePath)
+			}
+
+			fileData := New(filePath, "\\p{Hangul}")
+			fileData.Scan(fn)
+			cp <- fileData
+		}(filePath)
+	}
+
+	go func() {
+		wg.Wait()
+		close(cp)
+	}()
+	return cp
 }
