@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	comments  map[string]string
-	skipPaths map[string]string
-	verbose   = flag.Bool("v", false, "Make some output more verbose.")
+	comments    map[string]string
+	skipPaths   map[string]string
+	verbose     = flag.Bool("v", false, "Make some output more verbose.")
+	interactive = flag.Bool("i", false, "Interactive scanning.")
 )
 
 func report(filteredFilesCount int, scanErrorCount int, files *[]file.Data) {
@@ -110,8 +111,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if !shouldScan(len(*resultPaths)) {
-		os.Exit(0)
+	if *interactive {
+		if !shouldScan(len(*resultPaths)) {
+			os.Exit(0)
+		}
 	}
 
 	filesContainingKorean := []file.Data{}
