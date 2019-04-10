@@ -17,6 +17,7 @@ var (
 	skipPaths   map[string]string
 	verbose     = flag.Bool("v", false, "Make some output more verbose.")
 	interactive = flag.Bool("i", false, "Interactive scanning.")
+	errorOnly   = flag.Bool("e", false, "Make output error only.")
 )
 
 func report(filteredFilesCount int, scanErrorCount int, files *[]file.Data) {
@@ -137,7 +138,7 @@ func main() {
 		fileData := <-cp
 		if fileData.ScanError != nil {
 			scanErrorCount++
-			if *verbose {
+			if *verbose || *errorOnly {
 				fmt.Printf("[%s] scanning error - %s\n", fileData.Path(), fileData.ScanError)
 			}
 		}
