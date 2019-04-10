@@ -118,10 +118,17 @@ func main() {
 		}
 	}
 
-	filesContainingKorean := []file.Data{}
-	cp := make(chan *file.Data)
+	opneLimit, err := file.Limit()
+	if err != nil {
+		opneLimit = 1024
+	}
 
-	scanErrorCount := 0
+	if opneLimit < uint64(len(*resultPaths)) {
+		fmt.Printf("[%d] too many files found.\n", len(*resultPaths))
+		os.Exit(0)
+	}
+
+	cp := make(chan *file.Data)
 	for _, filePath := range *resultPaths {
 		go func(filePath string) {
 			if *verbose {
@@ -134,6 +141,8 @@ func main() {
 		}(filePath)
 	}
 
+	filesContainingKorean := []file.Data{}
+	scanErrorCount := 0
 	for i := 0; i < len(*resultPaths); i++ {
 		fileData := <-cp
 		if fileData.ScanError != nil {

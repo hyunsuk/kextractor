@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 )
 
 type isComment func(s string) bool
@@ -106,4 +107,14 @@ func Search(dir string, filterByFileExt string, fn isSkipPath) (*[]string, error
 			return nil
 		})
 	return &resultPaths, err
+}
+
+// Limit ...
+func Limit() (uint64, error) {
+	var rLimit syscall.Rlimit
+	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	if err != nil {
+		return 0, err
+	}
+	return rLimit.Cur, nil
 }
