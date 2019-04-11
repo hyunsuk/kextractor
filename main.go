@@ -20,7 +20,7 @@ var (
 	errorOnly   = flag.Bool("e", false, "Make output error only.")
 )
 
-func report(filteredFilesCount int, scanErrorCount int, files *[]file.Data) {
+func report(filteredFilesCount uint64, scanErrorCount uint64, files *[]file.Data) {
 	for _, f := range *files {
 		fmt.Println(f.Path())
 		for n, t := range *f.MatchedLine() {
@@ -55,7 +55,7 @@ func isSkipPath(s string) bool {
 	return false
 }
 
-func shouldScan(foundFilesCount int) bool {
+func shouldScan(foundFilesCount uint64) bool {
 	var response string
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Printf("found files [%d]. do you want to scan it? (y/n): ", foundFilesCount)
@@ -112,35 +112,50 @@ func main() {
 		log.Fatal(err)
 	}
 
+	resultPathsLen := uint64(len(*resultPaths))
+	if resultPathsLen == 0 {
+		fmt.Printf("[*.%s] file not found in [%s] directory\n", filterByFileExt, dirPathToSearch)
+		os.Exit(0)
+	}
 	if *interactive {
-		if !shouldScan(len(*resultPaths)) {
+		if !shouldScan(resultPathsLen) {
 			os.Exit(0)
 		}
 	}
 
-	opneLimit, err := file.Limit()
+	chunkSize, err := file.Limit()
 	if err != nil {
-		opneLimit = 1024
+		chunkSize = 1024
 	}
 
-	if opneLimit < uint64(len(*resultPaths)) {
-		fmt.Printf("[%d] too many files found.\n", len(*resultPaths))
-		os.Exit(0)
+	var chunks [][]string
+	var i uint64
+	for i = 0; i < resultPathsLen; i += chunkSize {
+		end := i + chunkSize
+
+		if end > resultPathsLen {
+			end = resultPathsLen
+		}
+
+		chunks = append(chunks, (*resultPaths)[i:end])
 	}
 
 	filesContainingKorean := []file.Data{}
-	scanErrorCount := 0
-	for fileData := range file.ScanKorean(resultPaths, *verbose, isComment) {
-		if fileData.ScanError != nil {
-			scanErrorCount++
-			if *verbose || *errorOnly {
-				fmt.Printf("[%s] scanning error - %s\n", fileData.Path(), fileData.ScanError)
+	var scanErrorCount uint64
+	scanErrorCount = 0
+	for _, paths := range chunks {
+		for fileData := range file.ScanKorean(&paths, *verbose, isComment) {
+			if fileData.ScanError != nil {
+				scanErrorCount++
+				if *verbose || *errorOnly {
+					fmt.Printf("[%s] scanning error - %s\n", fileData.Path(), fileData.ScanError)
+				}
 			}
-		}
-		if fileData.HasMatchedString() {
-			filesContainingKorean = append(filesContainingKorean, (*fileData))
+			if fileData.HasMatchedString() {
+				filesContainingKorean = append(filesContainingKorean, (*fileData))
+			}
 		}
 	}
 
-	report(len(*resultPaths), scanErrorCount, &filesContainingKorean)
+	report(resultPathsLen, scanErrorCount, &filesContainingKorean)
 }
