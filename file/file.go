@@ -85,7 +85,7 @@ func (d *Data) MatchedLine() *map[int]string {
 
 // Search ...
 func Search(dir string, filterByFileExt string, fn isSkipPath) (*[]string, error) {
-	fmt.Printf("search for files [*.%s] in [%s] directory.\n", filterByFileExt, dir)
+	fmt.Printf("search for files [*.%s] in [%s] directory\n", filterByFileExt, dir)
 	var resultPaths []string
 	err := filepath.Walk(dir,
 		func(path string, f os.FileInfo, err error) error {
