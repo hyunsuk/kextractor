@@ -3,6 +3,7 @@ package file
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -39,9 +40,25 @@ func (d *Data) Scan(fn isComment) {
 	defer f.Close()
 
 	lineNumber := 1
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		lineText := scanner.Text()
+	reader := bufio.NewReader(f)
+	preFix := []byte{}
+	for {
+		line, isPrefix, err := reader.ReadLine()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			d.ScanError = err
+			break
+		}
+
+		preFix = append(preFix, line...)
+		if isPrefix {
+			continue
+		}
+
+		lineText := string(preFix)
+		preFix = []byte{}
 		if fn(lineText) {
 			lineNumber++
 			continue
@@ -50,17 +67,12 @@ func (d *Data) Scan(fn isComment) {
 		matched, err := regexp.MatchString(d.matchString, lineText)
 		if err != nil {
 			d.ScanError = err
-			return
+			break
 		}
 		if matched {
 			d.linesContainingMatchString[lineNumber] = lineText
 		}
 		lineNumber++
-	}
-
-	if err := scanner.Err(); err != nil {
-		d.ScanError = err
-		return
 	}
 	d.isScanned = true
 }
