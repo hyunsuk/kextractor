@@ -21,10 +21,12 @@ var (
 )
 
 func report(filteredFilesCount uint64, scanErrorCount uint64, files *[]file.Data) {
-	for _, f := range *files {
-		fmt.Println(f.Path())
-		for n, t := range *f.MatchedLine() {
-			fmt.Printf("%d: %s\n", n, t)
+	if !(*errorOnly) {
+		for _, f := range *files {
+			fmt.Println(f.Path())
+			for n, t := range *f.MatchedLine() {
+				fmt.Printf("%d: %s\n", n, t)
+			}
 		}
 	}
 	fmt.Printf("[%d] scanning files\n", filteredFilesCount)
