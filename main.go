@@ -24,9 +24,7 @@ func report(filteredFilesCount uint64, scanErrorCount uint64, files *[]file.Data
 	if !(*errorOnly) {
 		for _, f := range *files {
 			fmt.Println(f.Path())
-			for n, t := range *f.MatchedLine() {
-				fmt.Printf("%d: %s\n", n, t)
-			}
+			f.PrintMatchedLine()
 		}
 	}
 	fmt.Printf("[%d] scanning files\n", filteredFilesCount)

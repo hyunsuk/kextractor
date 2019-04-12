@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -93,6 +94,22 @@ func (d *Data) Path() string {
 // MatchedLine ...
 func (d *Data) MatchedLine() *map[int]string {
 	return &d.linesContainingMatchString
+}
+
+// PrintMatchedLine ...
+func (d *Data) PrintMatchedLine() {
+	keys := make([]int, len(d.linesContainingMatchString))
+	i := 0
+	for k := range d.linesContainingMatchString {
+		keys[i] = k
+		i++
+	}
+
+	sort.Ints(keys)
+	for _, k := range keys {
+		v, _ := d.linesContainingMatchString[k]
+		fmt.Printf("%d: %s\n", k, v)
+	}
 }
 
 // Search ...
