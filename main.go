@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/loganstone/kextractor/file"
+	"github.com/loganstone/kpick/file"
 )
 
 var (
