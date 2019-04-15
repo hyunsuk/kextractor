@@ -139,8 +139,8 @@ func Search(dir string, filterByFileExt string, fn isSkipPath) (*[]string, error
 	return &resultPaths, err
 }
 
-// Limit ...
-func Limit() (uint64, error) {
+// LimitNumberOfFiles ...
+func LimitNumberOfFiles() (uint64, error) {
 	var rLimit syscall.Rlimit
 	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
 	if err != nil {
@@ -173,4 +173,26 @@ func ScanKorean(filePaths *[]string, verbose bool, fn isComment) <-chan *Data {
 		close(cp)
 	}()
 	return cp
+}
+
+// Chunks ...
+func Chunks(foundFiles *[]string) [][]string {
+	foundFilesCnt := uint64(len(*foundFiles))
+	chunkSize, err := LimitNumberOfFiles()
+	if err != nil {
+		chunkSize = 1024
+	}
+
+	var chunks [][]string
+	var i uint64
+	for i = 0; i < foundFilesCnt; i += chunkSize {
+		end := i + chunkSize
+
+		if end > foundFilesCnt {
+			end = foundFilesCnt
+		}
+
+		chunks = append(chunks, (*foundFiles)[i:end])
+	}
+	return chunks
 }

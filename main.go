@@ -20,17 +20,17 @@ var (
 	errorOnly   = flag.Bool("e", false, "Make output error only.")
 )
 
-func report(filteredFilesCount uint64, scanErrorCount uint64, files *[]file.Data) {
+func report(filesCnt uint64, errorCnt uint64, containingKorean *[]file.Data) {
 	if !(*errorOnly) {
-		for _, f := range *files {
+		for _, f := range *containingKorean {
 			fmt.Println(f.Path())
 			f.PrintMatchedLine()
 		}
 	}
-	fmt.Printf("[%d] scanning files\n", filteredFilesCount)
-	fmt.Printf("[%d] error \n", scanErrorCount)
-	fmt.Printf("[%d] success \n", filteredFilesCount-scanErrorCount)
-	fmt.Printf("[%d] files containing korean\n", len(*files))
+	fmt.Printf("[%d] scanning files\n", filesCnt)
+	fmt.Printf("[%d] error \n", errorCnt)
+	fmt.Printf("[%d] success \n", filesCnt-errorCnt)
+	fmt.Printf("[%d] files containing korean\n", len(*containingKorean))
 }
 
 func isComment(s string) bool {
@@ -55,17 +55,17 @@ func isSkipPath(s string) bool {
 	return false
 }
 
-func shouldScan(foundFilesCount uint64) bool {
+func shouldScan(foundFilesCnt uint64) bool {
 	var response string
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("found files [%d]. do you want to scan it? (y/n): ", foundFilesCount)
+	fmt.Printf("found files [%d]. do you want to scan it? (y/n): ", foundFilesCnt)
 	response, err := reader.ReadString('\n')
 	if err != nil {
 		log.Fatal(err)
 	}
 	response = strings.Trim(response, " \n")
 	if response != "y" && response != "n" {
-		return shouldScan(foundFilesCount)
+		return shouldScan(foundFilesCnt)
 	}
 	if response == "n" {
 		return false
@@ -107,55 +107,38 @@ func main() {
 		log.Fatalf("'%s' must be directory", dirPathToSearch)
 	}
 
-	resultPaths, err := file.Search(dirPathToSearch, filterByFileExt, isSkipPath)
+	foundFiles, err := file.Search(dirPathToSearch, filterByFileExt, isSkipPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	resultPathsLen := uint64(len(*resultPaths))
-	if resultPathsLen == 0 {
+	foundFilesCnt := uint64(len(*foundFiles))
+	if foundFilesCnt == 0 {
 		fmt.Printf("[*.%s] file not found in [%s] directory\n", filterByFileExt, dirPathToSearch)
 		os.Exit(0)
 	}
 	if *interactive {
-		if !shouldScan(resultPathsLen) {
+		if !shouldScan(foundFilesCnt) {
 			os.Exit(0)
 		}
 	}
 
-	chunkSize, err := file.Limit()
-	if err != nil {
-		chunkSize = 1024
-	}
-
-	var chunks [][]string
-	var i uint64
-	for i = 0; i < resultPathsLen; i += chunkSize {
-		end := i + chunkSize
-
-		if end > resultPathsLen {
-			end = resultPathsLen
-		}
-
-		chunks = append(chunks, (*resultPaths)[i:end])
-	}
-
-	filesContainingKorean := []file.Data{}
-	var scanErrorCount uint64
-	scanErrorCount = 0
-	for _, paths := range chunks {
+	containingKorean := []file.Data{}
+	var scanErrorCnt uint64
+	scanErrorCnt = 0
+	for _, paths := range file.Chunks(foundFiles) {
 		for fileData := range file.ScanKorean(&paths, *verbose, isComment) {
 			if fileData.ScanError != nil {
-				scanErrorCount++
+				scanErrorCnt++
 				if *verbose || *errorOnly {
 					fmt.Printf("[%s] scanning error - %s\n", fileData.Path(), fileData.ScanError)
 				}
 			}
 			if fileData.HasMatchedString() {
-				filesContainingKorean = append(filesContainingKorean, (*fileData))
+				containingKorean = append(containingKorean, (*fileData))
 			}
 		}
 	}
 
-	report(resultPathsLen, scanErrorCount, &filesContainingKorean)
+	report(foundFilesCnt, scanErrorCnt, &containingKorean)
 }
