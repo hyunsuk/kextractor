@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"runtime"
+	"runtime/pprof"
 	"strings"
 
 	"github.com/loganstone/kpick/conf"
@@ -16,6 +18,9 @@ import (
 var (
 	comments  map[string]string
 	skipPaths map[string]string
+
+	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
+	memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
 	dirToSearch   = flag.String("d", conf.DefaultDir, "Directory to search.")
 	fileExtToScan = flag.String("f", conf.DefaultFileExt, "File extension to scan.")
@@ -92,6 +97,18 @@ func init() {
 func main() {
 	flag.Parse()
 
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
+
 	if (*dirToSearch) == "" || (*dirToSearch) == conf.DefaultDir {
 		currentDir, err := os.Getwd()
 		if err != nil {
@@ -143,4 +160,16 @@ func main() {
 	}
 
 	report(foundFilesCnt, scanErrorCnt, &containingKorean)
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close()
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+	}
 }
