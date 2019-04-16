@@ -182,8 +182,14 @@ func Chunks(foundFiles *[]string) [][]string {
 	foundFilesCnt := uint64(len(*foundFiles))
 	chunkSize, err := LimitNumberOfFiles()
 	if err != nil {
-		chunkSize = 1024
+		chunkSize = conf.DefaultChunksSizeToScan
 	}
+
+	// NOTE: "too many open files" io error 회피
+	// 현재 열려있는 파일 수를 확인하는 것보다 더 간단하고,
+	// 프로세스당 파일 제한 값의 반만 사용하더라도
+	// 속도에는 크게 차이가 없다.
+	chunkSize = chunkSize >> 1
 
 	var chunks [][]string
 	var i uint64

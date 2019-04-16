@@ -5,4 +5,6 @@ const (
 	DefaultDir = "."
 	// DefaultFileExt ...
 	DefaultFileExt = "*"
+	// DefaultChunksSizeToScan ...
+	DefaultChunksSizeToScan = 2048
 )
