@@ -16,7 +16,7 @@ $ go get github.com/loganstone/kpick
 * Run
 
 ```shell
-$ kpick js /some-directory
+$ kpick -d /some-directory -f js
 ```
 
 ## Key Features
