@@ -92,7 +92,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	if (*dirToSearch) == "" {
+	if (*dirToSearch) == "" || (*dirToSearch) == conf.DefaultDir {
 		currentDir, err := os.Getwd()
 		if err != nil {
 			log.Fatal(err)
