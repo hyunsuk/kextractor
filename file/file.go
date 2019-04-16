@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+
+	"github.com/loganstone/kpick/conf"
 )
 
 type isComment func(s string) bool
@@ -126,7 +128,7 @@ func Search(dir string, filterByFileExt string, fn isSkipPath) (*[]string, error
 				return nil
 			}
 
-			if filterByFileExt != "" {
+			if filterByFileExt != "" && filterByFileExt != conf.DefaultFileExt {
 				v := strings.Split(f.Name(), ".")
 				if v[len(v)-1] == filterByFileExt {
 					resultPaths = append(resultPaths, path)

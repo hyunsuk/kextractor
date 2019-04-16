@@ -9,15 +9,19 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/loganstone/kpick/conf"
 	"github.com/loganstone/kpick/file"
 )
 
 var (
-	comments    map[string]string
-	skipPaths   map[string]string
-	verbose     = flag.Bool("v", false, "Make some output more verbose.")
-	interactive = flag.Bool("i", false, "Interactive scanning.")
-	errorOnly   = flag.Bool("e", false, "Make output error only.")
+	comments  map[string]string
+	skipPaths map[string]string
+
+	dirToSearch   = flag.String("d", conf.DefaultDir, "Directory to search.")
+	fileExtToScan = flag.String("f", conf.DefaultFileExt, "File extension to scan.")
+	verbose       = flag.Bool("v", false, "Make some output more verbose.")
+	interactive   = flag.Bool("i", false, "Interactive scanning.")
+	errorOnly     = flag.Bool("e", false, "Make output error only.")
 )
 
 func report(filesCnt uint64, errorCnt uint64, containingKorean *[]file.Data) {
@@ -87,34 +91,32 @@ func init() {
 
 func main() {
 	flag.Parse()
-	filterByFileExt := flag.Arg(0)
-	dirPathToSearch := flag.Arg(1)
 
-	if dirPathToSearch == "" {
+	if (*dirToSearch) == "" {
 		currentDir, err := os.Getwd()
 		if err != nil {
 			log.Fatal(err)
 		}
-		dirPathToSearch = currentDir
+		(*dirToSearch) = currentDir
 	}
 
-	dirInfo, err := os.Stat(dirPathToSearch)
+	dirInfo, err := os.Stat((*dirToSearch))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if !dirInfo.IsDir() {
-		log.Fatalf("'%s' must be directory", dirPathToSearch)
+		log.Fatalf("'%s' must be directory", (*dirToSearch))
 	}
 
-	foundFiles, err := file.Search(dirPathToSearch, filterByFileExt, isSkipPath)
+	foundFiles, err := file.Search((*dirToSearch), (*fileExtToScan), isSkipPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	foundFilesCnt := uint64(len(*foundFiles))
 	if foundFilesCnt == 0 {
-		fmt.Printf("[*.%s] file not found in [%s] directory\n", filterByFileExt, dirPathToSearch)
+		fmt.Printf("[*.%s] file not found in [%s] directory\n", (*fileExtToScan), (*dirToSearch))
 		os.Exit(0)
 	}
 	if *interactive {
