@@ -7,4 +7,6 @@ const (
 	DefaultFileExt = "*"
 	// DefaultChunksSizeToScan ...
 	DefaultChunksSizeToScan = 2048
+	// DefaultSkipPaths ...
+	DefaultSkipPaths = ".git,tmp"
 )

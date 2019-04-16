@@ -115,7 +115,7 @@ func (d *Data) PrintMatchedLine() {
 }
 
 // Search ...
-func Search(dir string, filterByFileExt string, fn isSkipPath) (*[]string, error) {
+func Search(dir string, filterByFileExt string, skip *regexp.Regexp) (*[]string, error) {
 	fmt.Printf("search for files [*.%s] in [%s] directory\n", filterByFileExt, dir)
 	var resultPaths []string
 	err := filepath.Walk(dir,
@@ -124,7 +124,7 @@ func Search(dir string, filterByFileExt string, fn isSkipPath) (*[]string, error
 				return err
 			}
 
-			if f.IsDir() || fn(path) {
+			if f.IsDir() || (*skip).MatchString(path) {
 				return nil
 			}
 

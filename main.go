@@ -16,14 +16,14 @@ import (
 )
 
 var (
-	comments  map[string]string
-	skipPaths map[string]string
+	comments map[string]string
 
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 	memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
 	dirToSearch   = flag.String("d", conf.DefaultDir, "Directory to search.")
 	fileExtToScan = flag.String("f", conf.DefaultFileExt, "File extension to scan.")
+	skipPaths     = flag.String("s", conf.DefaultSkipPaths, "Directories to skip from search.(delimiter ',')")
 	verbose       = flag.Bool("v", false, "Make some output more verbose.")
 	interactive   = flag.Bool("i", false, "Interactive scanning.")
 	errorOnly     = flag.Bool("e", false, "Make output error only.")
@@ -53,15 +53,17 @@ func isComment(s string) bool {
 	return false
 }
 
-func isSkipPath(s string) bool {
-	for _, v := range skipPaths {
-		if matched, err := regexp.MatchString(v, s); err != nil {
-			log.Fatal(err)
-		} else if matched {
-			return matched
-		}
+func getSkipPathRegexp(skipPaths *string) (*regexp.Regexp, error) {
+	if (*skipPaths) != conf.DefaultSkipPaths {
+		(*skipPaths) += "," + conf.DefaultSkipPaths
 	}
-	return false
+	paths := strings.Split(*skipPaths, ",")
+	(*skipPaths) = strings.Join(paths, "|")
+	skipPathRegexp, err := regexp.Compile(*skipPaths)
+	if err != nil {
+		return nil, err
+	}
+	return skipPathRegexp, nil
 }
 
 func shouldScan(foundFilesCnt uint64) bool {
@@ -88,10 +90,6 @@ func init() {
 		"html":       "\\s*<!--\\s*|.*-->$",
 		"javascript": "\\s*[//|/*]\\s*",
 	}
-	skipPaths = map[string]string{
-		"test": "test",
-		"git":  ".git",
-	}
 }
 
 func main() {
@@ -107,6 +105,11 @@ func main() {
 			log.Fatal("could not start CPU profile: ", err)
 		}
 		defer pprof.StopCPUProfile()
+	}
+
+	skipPathRegexp, err := getSkipPathRegexp(skipPaths)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	if (*dirToSearch) == "" || (*dirToSearch) == conf.DefaultDir {
@@ -126,7 +129,7 @@ func main() {
 		log.Fatalf("'%s' must be directory", (*dirToSearch))
 	}
 
-	foundFiles, err := file.Search((*dirToSearch), (*fileExtToScan), isSkipPath)
+	foundFiles, err := file.Search((*dirToSearch), (*fileExtToScan), skipPathRegexp)
 	if err != nil {
 		log.Fatal(err)
 	}
