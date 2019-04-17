@@ -16,7 +16,6 @@ import (
 )
 
 type isComment func(s string) bool
-type isSkipPath func(s string) bool
 
 // Data ...
 type Data struct {
