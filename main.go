@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/loganstone/kpick/conf"
+	"github.com/loganstone/kpick/dir"
 	"github.com/loganstone/kpick/file"
 )
 
@@ -29,17 +30,17 @@ var (
 	errorOnly     = flag.Bool("e", false, "Make output error only.")
 )
 
-func report(filesCnt uint64, errorCnt uint64, containingKorean *[]file.Data) {
+func report(filesCnt uint64, errorCnt uint64, containKorean *[]file.Source) {
 	if !(*errorOnly) {
-		for _, f := range *containingKorean {
+		for _, f := range *containKorean {
 			fmt.Println(f.Path())
-			f.PrintMatchedLine()
+			f.PrintFoundLines()
 		}
 	}
 	fmt.Printf("[%d] scanning files\n", filesCnt)
 	fmt.Printf("[%d] error \n", errorCnt)
 	fmt.Printf("[%d] success \n", filesCnt-errorCnt)
-	fmt.Printf("[%d] files containing korean\n", len(*containingKorean))
+	fmt.Printf("[%d] files containing korean\n", len(*containKorean))
 }
 
 func isComment(s string) bool {
@@ -51,19 +52,6 @@ func isComment(s string) bool {
 		}
 	}
 	return false
-}
-
-func getSkipPathRegexp(skipPaths *string) (*regexp.Regexp, error) {
-	if (*skipPaths) != conf.DefaultSkipPaths {
-		(*skipPaths) += "," + conf.DefaultSkipPaths
-	}
-	paths := strings.Split(*skipPaths, ",")
-	(*skipPaths) = strings.Join(paths, "|")
-	skipPathRegexp, err := regexp.Compile(*skipPaths)
-	if err != nil {
-		return nil, err
-	}
-	return skipPathRegexp, nil
 }
 
 func shouldScan(foundFilesCnt uint64) bool {
@@ -107,11 +95,6 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	skipPathRegexp, err := getSkipPathRegexp(skipPaths)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	if (*dirToSearch) == "" || (*dirToSearch) == conf.DefaultDir {
 		currentDir, err := os.Getwd()
 		if err != nil {
@@ -120,16 +103,22 @@ func main() {
 		(*dirToSearch) = currentDir
 	}
 
-	dirInfo, err := os.Stat((*dirToSearch))
+	err := dir.Check(dirToSearch)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if !dirInfo.IsDir() {
-		log.Fatalf("'%s' must be directory", (*dirToSearch))
+	if (*skipPaths) != conf.DefaultSkipPaths {
+		(*skipPaths) += "," + conf.DefaultSkipPaths
 	}
 
-	foundFiles, err := file.Search((*dirToSearch), (*fileExtToScan), skipPathRegexp)
+	skipPathRegexp, err := dir.MakeSkipPathRegexp(skipPaths)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("search for files [*.%s] in [%s] directory\n", (*fileExtToScan), (*dirToSearch))
+	foundFiles, err := dir.Search((*dirToSearch), (*fileExtToScan), skipPathRegexp)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -139,30 +128,33 @@ func main() {
 		fmt.Printf("[*.%s] file not found in [%s] directory\n", (*fileExtToScan), (*dirToSearch))
 		os.Exit(0)
 	}
+
 	if *interactive {
 		if !shouldScan(foundFilesCnt) {
 			os.Exit(0)
 		}
 	}
 
-	containingKorean := []file.Data{}
+	containKorean := []file.Source{}
 	var scanErrorCnt uint64
 	scanErrorCnt = 0
 	for _, paths := range file.Chunks(foundFiles) {
-		for fileData := range file.ScanKorean(&paths, *verbose, isComment) {
-			if fileData.ScanError != nil {
+		for source := range file.ScanKorean(&paths, *verbose, isComment) {
+			if err := source.Error(); err != nil {
 				scanErrorCnt++
 				if *verbose || *errorOnly {
-					fmt.Printf("[%s] scanning error - %s\n", fileData.Path(), fileData.ScanError)
+					fmt.Printf("[%s] scanning error - %s\n", source.Path(), err)
 				}
+				continue
 			}
-			if fileData.HasMatchedString() {
-				containingKorean = append(containingKorean, (*fileData))
+
+			if len(*source.FoundLines()) > 0 {
+				containKorean = append(containKorean, (*source))
 			}
 		}
 	}
 
-	report(foundFilesCnt, scanErrorCnt, &containingKorean)
+	report(foundFilesCnt, scanErrorCnt, &containKorean)
 
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)

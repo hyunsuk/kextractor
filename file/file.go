@@ -4,140 +4,107 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
-	"path/filepath"
 	"regexp"
 	"sort"
-	"strings"
 	"sync"
 	"syscall"
 
 	"github.com/loganstone/kpick/conf"
 )
 
+const startLineNumber = 1
+const regexpStrToKorean = "\\p{Hangul}"
+
 type isComment func(s string) bool
 
-// Data ...
-type Data struct {
-	path                       string
-	matchString                string
-	linesContainingMatchString map[int]string
-	isScanned                  bool
-	ScanError                  error
+// Source ...
+type Source struct {
+	path        string
+	lineScanner *regexp.Regexp
+	foundLines  map[int]string
+	isScanned   bool
+	scanError   error
 }
 
 // New ...
-func New(path string, matchString string) *Data {
-	return &Data{path, matchString, map[int]string{}, false, nil}
+func New(path string, regexp *regexp.Regexp) *Source {
+	return &Source{path, regexp, map[int]string{}, false, nil}
 }
 
 // Scan ...
-func (d *Data) Scan(fn isComment) {
+func (d *Source) Scan(fn isComment) {
 	f, err := os.Open(d.path)
 	if err != nil {
-		d.ScanError = err
+		d.scanError = err
 		return
 	}
 
 	defer f.Close()
 
-	lineNumber := 1
 	reader := bufio.NewReader(f)
-	preFix := []byte{}
+	lineNumber := startLineNumber
+	pre := []byte{}
 	for {
 		line, isPrefix, err := reader.ReadLine()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			d.ScanError = err
+			d.scanError = err
 			break
 		}
 
-		preFix = append(preFix, line...)
+		pre = append(pre, line...)
 		if isPrefix {
 			continue
 		}
 
-		lineText := string(preFix)
-		preFix = []byte{}
-		if fn(lineText) {
+		texts := string(pre)
+		pre = []byte{}
+		if fn(texts) {
 			lineNumber++
 			continue
 		}
 
-		matched, err := regexp.MatchString(d.matchString, lineText)
-		if err != nil {
-			d.ScanError = err
-			break
-		}
-		if matched {
-			d.linesContainingMatchString[lineNumber] = lineText
+		if d.lineScanner.MatchString(texts) {
+			d.foundLines[lineNumber] = texts
 		}
 		lineNumber++
 	}
 	d.isScanned = true
 }
 
-// HasMatchedString ...
-func (d *Data) HasMatchedString() bool {
-	if !d.isScanned {
-		return false
-	}
-	return len(d.linesContainingMatchString) > 0
-}
-
 // Path ...
-func (d *Data) Path() string {
+func (d *Source) Path() string {
 	return d.path
 }
 
-// MatchedLine ...
-func (d *Data) MatchedLine() *map[int]string {
-	return &d.linesContainingMatchString
+// Error ...
+func (d *Source) Error() error {
+	return d.scanError
 }
 
-// PrintMatchedLine ...
-func (d *Data) PrintMatchedLine() {
-	keys := make([]int, len(d.linesContainingMatchString))
+// FoundLines ...
+func (d *Source) FoundLines() *map[int]string {
+	return &d.foundLines
+}
+
+// PrintFoundLines ...
+func (d *Source) PrintFoundLines() {
+	keys := make([]int, len(d.foundLines))
 	i := 0
-	for k := range d.linesContainingMatchString {
+	for k := range d.foundLines {
 		keys[i] = k
 		i++
 	}
 
 	sort.Ints(keys)
 	for _, k := range keys {
-		v, _ := d.linesContainingMatchString[k]
+		v, _ := d.foundLines[k]
 		fmt.Printf("%d: %s\n", k, v)
 	}
-}
-
-// Search ...
-func Search(dir string, filterByFileExt string, skip *regexp.Regexp) (*[]string, error) {
-	fmt.Printf("search for files [*.%s] in [%s] directory\n", filterByFileExt, dir)
-	var resultPaths []string
-	err := filepath.Walk(dir,
-		func(path string, f os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if f.IsDir() || (*skip).MatchString(path) {
-				return nil
-			}
-
-			if filterByFileExt != "" && filterByFileExt != conf.DefaultFileExt {
-				v := strings.Split(f.Name(), ".")
-				if v[len(v)-1] == filterByFileExt {
-					resultPaths = append(resultPaths, path)
-				}
-				return nil
-			}
-			resultPaths = append(resultPaths, path)
-			return nil
-		})
-	return &resultPaths, err
 }
 
 // LimitNumberOfFiles ...
@@ -151,8 +118,13 @@ func LimitNumberOfFiles() (uint64, error) {
 }
 
 // ScanKorean ...
-func ScanKorean(filePaths *[]string, verbose bool, fn isComment) <-chan *Data {
-	cp := make(chan *Data)
+func ScanKorean(filePaths *[]string, verbose bool, fn isComment) <-chan *Source {
+	cp := make(chan *Source)
+	regexp, err := regexp.Compile(regexpStrToKorean)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	var wg sync.WaitGroup
 	wg.Add(len(*filePaths))
 
@@ -163,7 +135,7 @@ func ScanKorean(filePaths *[]string, verbose bool, fn isComment) <-chan *Data {
 				fmt.Printf("[%s] scanning Korean character in file\n", filePath)
 			}
 
-			fileData := New(filePath, "\\p{Hangul}")
+			fileData := New(filePath, regexp)
 			fileData.Scan(fn)
 			cp <- fileData
 		}(filePath)
