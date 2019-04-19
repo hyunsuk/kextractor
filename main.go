@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"runtime"
 	"runtime/pprof"
 	"strings"
@@ -95,6 +96,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	lineScanner, err := regexp.Compile(conf.RegexStrToKorean)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mayBeComment, err := regexp.Compile(conf.RegexStrComments)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	fmt.Printf("search for files [*.%s] in [%s] directory\n", (*fileExtToScan), (*dirToSearch))
 	foundFiles, err := dir.Search((*dirToSearch), (*fileExtToScan), skipPathRegexp)
 	if err != nil {
@@ -117,7 +128,7 @@ func main() {
 	var scanErrorCnt uint64
 	scanErrorCnt = 0
 	for _, paths := range file.Chunks(foundFiles) {
-		for source := range file.ScanKorean(&paths, *verbose) {
+		for source := range file.ScanKorean(&paths, *verbose, lineScanner, mayBeComment) {
 			if err := source.Error(); err != nil {
 				scanErrorCnt++
 				if *verbose || *errorOnly {

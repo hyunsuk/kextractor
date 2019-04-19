@@ -14,9 +14,7 @@ import (
 )
 
 const (
-	startLineNumber  = 1
-	regexStrToKorean = "\\p{Hangul}"
-	regexStrComments = "#|\\/\\/|\\/\\*|<\\!\\-\\-|\\*\\s|\\-\\->|\\*\\/"
+	startLineNumber = 1
 )
 
 var comments *regexp.Regexp
@@ -32,11 +30,11 @@ type Source struct {
 }
 
 // New ...
-func New(path string, lineScanner *regexp.Regexp) *Source {
+func New(path string, lineScanner *regexp.Regexp, mayBeComment *regexp.Regexp) *Source {
 	return &Source{
 		path,
 		lineScanner,
-		regexp.MustCompile(regexStrComments),
+		mayBeComment,
 		map[int]string{},
 		false,
 		nil,
@@ -73,7 +71,7 @@ func (d *Source) Scan() {
 
 		texts := string(pre)
 		pre = []byte{}
-		if d.mayBeComment.MatchString(texts) {
+		if d.mayBeComment != nil && d.mayBeComment.MatchString(texts) {
 			lineNumber++
 			continue
 		}
@@ -128,9 +126,8 @@ func LimitNumberOfFiles() (uint64, error) {
 }
 
 // ScanKorean ...
-func ScanKorean(filePaths *[]string, verbose bool) <-chan *Source {
+func ScanKorean(filePaths *[]string, verbose bool, lineScanner *regexp.Regexp, mayBeComment *regexp.Regexp) <-chan *Source {
 	cp := make(chan *Source)
-	lineScanner := regexp.MustCompile(regexStrToKorean)
 
 	var wg sync.WaitGroup
 	wg.Add(len(*filePaths))
@@ -142,7 +139,7 @@ func ScanKorean(filePaths *[]string, verbose bool) <-chan *Source {
 				fmt.Printf("[%s] scanning Korean character in file\n", filePath)
 			}
 
-			fileData := New(filePath, lineScanner)
+			fileData := New(filePath, lineScanner, mayBeComment)
 			fileData.Scan()
 			cp <- fileData
 		}(filePath)
