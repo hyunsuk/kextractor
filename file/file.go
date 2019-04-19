@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"regexp"
 	"sort"
@@ -14,27 +13,38 @@ import (
 	"github.com/loganstone/kpick/conf"
 )
 
-const startLineNumber = 1
-const regexpStrToKorean = "\\p{Hangul}"
+const (
+	startLineNumber  = 1
+	regexStrToKorean = "\\p{Hangul}"
+	regexStrComments = "\\s*[#|//|/*|<!--]\\s*|.[*-->|\\*/]$"
+)
 
-type isComment func(s string) bool
+var comments *regexp.Regexp
 
 // Source ...
 type Source struct {
-	path        string
-	lineScanner *regexp.Regexp
-	foundLines  map[int]string
-	isScanned   bool
-	scanError   error
+	path           string
+	lineScanner    *regexp.Regexp
+	commentChecker *regexp.Regexp
+	foundLines     map[int]string
+	isScanned      bool
+	scanError      error
 }
 
 // New ...
-func New(path string, regexp *regexp.Regexp) *Source {
-	return &Source{path, regexp, map[int]string{}, false, nil}
+func New(path string, lineScanner *regexp.Regexp) *Source {
+	return &Source{
+		path,
+		lineScanner,
+		regexp.MustCompile(regexStrComments),
+		map[int]string{},
+		false,
+		nil,
+	}
 }
 
 // Scan ...
-func (d *Source) Scan(fn isComment) {
+func (d *Source) Scan() {
 	f, err := os.Open(d.path)
 	if err != nil {
 		d.scanError = err
@@ -63,7 +73,7 @@ func (d *Source) Scan(fn isComment) {
 
 		texts := string(pre)
 		pre = []byte{}
-		if fn(texts) {
+		if d.commentChecker.MatchString(texts) {
 			lineNumber++
 			continue
 		}
@@ -118,12 +128,9 @@ func LimitNumberOfFiles() (uint64, error) {
 }
 
 // ScanKorean ...
-func ScanKorean(filePaths *[]string, verbose bool, fn isComment) <-chan *Source {
+func ScanKorean(filePaths *[]string, verbose bool) <-chan *Source {
 	cp := make(chan *Source)
-	regexp, err := regexp.Compile(regexpStrToKorean)
-	if err != nil {
-		log.Fatal(err)
-	}
+	lineScanner := regexp.MustCompile(regexStrToKorean)
 
 	var wg sync.WaitGroup
 	wg.Add(len(*filePaths))
@@ -135,8 +142,8 @@ func ScanKorean(filePaths *[]string, verbose bool, fn isComment) <-chan *Source 
 				fmt.Printf("[%s] scanning Korean character in file\n", filePath)
 			}
 
-			fileData := New(filePath, regexp)
-			fileData.Scan(fn)
+			fileData := New(filePath, lineScanner)
+			fileData.Scan()
 			cp <- fileData
 		}(filePath)
 	}

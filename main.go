@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"runtime"
 	"runtime/pprof"
 	"strings"
@@ -17,8 +16,6 @@ import (
 )
 
 var (
-	comments map[string]string
-
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 	memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
@@ -43,17 +40,6 @@ func report(filesCnt uint64, errorCnt uint64, containKorean *[]file.Source) {
 	fmt.Printf("[%d] files containing korean\n", len(*containKorean))
 }
 
-func isComment(s string) bool {
-	for _, v := range comments {
-		if matched, err := regexp.MatchString(v, s); err != nil {
-			log.Fatal(err)
-		} else if matched {
-			return matched
-		}
-	}
-	return false
-}
-
 func shouldScan(foundFilesCnt uint64) bool {
 	var response string
 	reader := bufio.NewReader(os.Stdin)
@@ -70,14 +56,6 @@ func shouldScan(foundFilesCnt uint64) bool {
 		return false
 	}
 	return true
-}
-
-func init() {
-	comments = map[string]string{
-		"python":     "\\s*#\\s*",
-		"html":       "\\s*<!--\\s*|.*-->$",
-		"javascript": "\\s*[//|/*]\\s*",
-	}
 }
 
 func main() {
@@ -139,7 +117,7 @@ func main() {
 	var scanErrorCnt uint64
 	scanErrorCnt = 0
 	for _, paths := range file.Chunks(foundFiles) {
-		for source := range file.ScanKorean(&paths, *verbose, isComment) {
+		for source := range file.ScanKorean(&paths, *verbose) {
 			if err := source.Error(); err != nil {
 				scanErrorCnt++
 				if *verbose || *errorOnly {
