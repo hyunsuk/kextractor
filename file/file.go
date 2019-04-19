@@ -16,19 +16,19 @@ import (
 const (
 	startLineNumber  = 1
 	regexStrToKorean = "\\p{Hangul}"
-	regexStrComments = "\\s*[#|//|/*|<!--]\\s*|.[*-->|\\*/]$"
+	regexStrComments = "#|\\/\\/|\\/\\*|<\\!\\-\\-|\\*\\s|\\-\\->|\\*\\/"
 )
 
 var comments *regexp.Regexp
 
 // Source ...
 type Source struct {
-	path           string
-	lineScanner    *regexp.Regexp
-	commentChecker *regexp.Regexp
-	foundLines     map[int]string
-	isScanned      bool
-	scanError      error
+	path         string
+	lineScanner  *regexp.Regexp
+	mayBeComment *regexp.Regexp
+	foundLines   map[int]string
+	isScanned    bool
+	scanError    error
 }
 
 // New ...
@@ -73,7 +73,7 @@ func (d *Source) Scan() {
 
 		texts := string(pre)
 		pre = []byte{}
-		if d.commentChecker.MatchString(texts) {
+		if d.mayBeComment.MatchString(texts) {
 			lineNumber++
 			continue
 		}
