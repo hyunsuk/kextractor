@@ -12,5 +12,5 @@ const (
 	// RegexStrToKorean ...
 	RegexStrToKorean = "\\p{Hangul}"
 	// RegexStrComments ...
-	RegexStrComments = "#|\\/\\/|\\/\\*|<\\!\\-\\-|\\*\\s|\\-\\->|\\*\\/"
+	RegexStrComments = "#|\\/\\/|\\/\\*|<\\!\\-\\-|\\-\\->|\\*\\/"
 )
