@@ -115,6 +115,21 @@ func (d *Source) PrintFoundLines() {
 	}
 }
 
+// MakeRegexpForScan ...
+func MakeRegexpForScan() (*regexp.Regexp, *regexp.Regexp, error) {
+	lineScanner, err := regexp.Compile(conf.RegexStrToKorean)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	mayBeComment, err := regexp.Compile(conf.RegexStrComments)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return lineScanner, mayBeComment, nil
+}
+
 // LimitNumberOfFiles ...
 func LimitNumberOfFiles() (uint64, error) {
 	var rLimit syscall.Rlimit

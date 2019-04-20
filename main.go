@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"runtime"
 	"runtime/pprof"
 	"strings"
@@ -96,12 +95,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	lineScanner, err := regexp.Compile(conf.RegexStrToKorean)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	mayBeComment, err := regexp.Compile(conf.RegexStrComments)
+	lineScanner, mayBeComment, err := file.MakeRegexpForScan()
 	if err != nil {
 		log.Fatal(err)
 	}
