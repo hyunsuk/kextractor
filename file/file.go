@@ -17,24 +17,22 @@ const (
 	startLineNumber = 1
 )
 
-var comments *regexp.Regexp
-
 // Source ...
 type Source struct {
-	path         string
-	lineScanner  *regexp.Regexp
-	mayBeComment *regexp.Regexp
-	foundLines   map[int]string
-	isScanned    bool
-	scanError    error
+	path        string
+	matchRegex  *regexp.Regexp
+	ignoreRegex *regexp.Regexp
+	foundLines  map[int]string
+	isScanned   bool
+	scanError   error
 }
 
 // New ...
-func New(path string, lineScanner *regexp.Regexp, mayBeComment *regexp.Regexp) *Source {
+func New(path string, matchRegex *regexp.Regexp, ignoreRegex *regexp.Regexp) *Source {
 	return &Source{
 		path,
-		lineScanner,
-		mayBeComment,
+		matchRegex,
+		ignoreRegex,
 		map[int]string{},
 		false,
 		nil,
@@ -71,12 +69,12 @@ func (d *Source) Scan() {
 
 		texts := string(pre)
 		pre = []byte{}
-		if d.mayBeComment != nil && d.mayBeComment.MatchString(texts) {
+		if d.ignoreRegex != nil && d.ignoreRegex.MatchString(texts) {
 			lineNumber++
 			continue
 		}
 
-		if d.lineScanner.MatchString(texts) {
+		if d.matchRegex != nil && d.matchRegex.MatchString(texts) {
 			d.foundLines[lineNumber] = texts
 		}
 		lineNumber++
@@ -115,19 +113,27 @@ func (d *Source) PrintFoundLines() {
 	}
 }
 
-// MakeRegexpForScan ...
-func MakeRegexpForScan() (*regexp.Regexp, *regexp.Regexp, error) {
-	lineScanner, err := regexp.Compile(conf.RegexStrToKorean)
-	if err != nil {
-		return nil, nil, err
+// MakeRegexForScan ...
+func MakeRegexForScan(match string, ignore string) (*regexp.Regexp, *regexp.Regexp, error) {
+	var matchRegex *regexp.Regexp
+	var ignoreRegex *regexp.Regexp
+	if match != "" {
+		regex, err := regexp.Compile(match)
+		if err != nil {
+			return nil, nil, err
+		}
+		matchRegex = regex
 	}
 
-	mayBeComment, err := regexp.Compile(conf.RegexStrComments)
-	if err != nil {
-		return nil, nil, err
+	if ignore != "" {
+		regex, err := regexp.Compile(ignore)
+		if err != nil {
+			return nil, nil, err
+		}
+		ignoreRegex = regex
 	}
 
-	return lineScanner, mayBeComment, nil
+	return matchRegex, ignoreRegex, nil
 }
 
 // LimitNumberOfFiles ...
@@ -140,8 +146,8 @@ func LimitNumberOfFiles() (uint64, error) {
 	return rLimit.Cur, nil
 }
 
-// ScanKorean ...
-func ScanKorean(filePaths *[]string, verbose bool, lineScanner *regexp.Regexp, mayBeComment *regexp.Regexp) <-chan *Source {
+// ScanFiles ...
+func ScanFiles(filePaths *[]string, verbose bool, matchRegex *regexp.Regexp, ignoreRegex *regexp.Regexp) <-chan *Source {
 	cp := make(chan *Source)
 
 	var wg sync.WaitGroup
@@ -151,10 +157,10 @@ func ScanKorean(filePaths *[]string, verbose bool, lineScanner *regexp.Regexp, m
 		go func(filePath string) {
 			defer wg.Done()
 			if verbose {
-				fmt.Printf("[%s] scanning Korean character in file\n", filePath)
+				fmt.Printf("[%s] scanning for \"%s\" \n", filePath, matchRegex.String())
 			}
 
-			fileData := New(filePath, lineScanner, mayBeComment)
+			fileData := New(filePath, matchRegex, ignoreRegex)
 			fileData.Scan()
 			cp <- fileData
 		}(filePath)

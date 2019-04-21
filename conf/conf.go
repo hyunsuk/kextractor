@@ -11,6 +11,4 @@ const (
 	DefaultSkipPaths = ".git,tmp"
 	// RegexStrToKorean ...
 	RegexStrToKorean = "\\p{Hangul}"
-	// RegexStrComments ...
-	RegexStrComments = "#|\\/\\/|\\/\\*|<\\!\\-\\-|\\-\\->|\\*\\/"
 )

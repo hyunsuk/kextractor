@@ -22,6 +22,7 @@ var (
 	dirToSearch   = flag.String("d", conf.DefaultDir, "Directory to search.")
 	fileExtToScan = flag.String("f", conf.DefaultFileExt, "File extension to scan.")
 	skipPaths     = flag.String("s", conf.DefaultSkipPaths, "Directories to skip from search.(delimiter ',')")
+	ignorePattern = flag.String("igg", "", "Pattern for line to ignore when scanning file.")
 	verbose       = flag.Bool("v", false, "Make some output more verbose.")
 	interactive   = flag.Bool("i", false, "Interactive scanning.")
 	errorOnly     = flag.Bool("e", false, "Make output error only.")
@@ -90,18 +91,18 @@ func main() {
 		(*skipPaths) += "," + conf.DefaultSkipPaths
 	}
 
-	skipPathRegexp, err := dir.MakeSkipPathRegexp(skipPaths)
+	skipPathRegex, err := dir.MakeSkipPathRegex(skipPaths)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	lineScanner, mayBeComment, err := file.MakeRegexpForScan()
+	matchRegex, ignoreRegex, err := file.MakeRegexForScan(conf.RegexStrToKorean, *ignorePattern)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("search for files [*.%s] in [%s] directory\n", (*fileExtToScan), (*dirToSearch))
-	foundFiles, err := dir.Search((*dirToSearch), (*fileExtToScan), skipPathRegexp)
+	foundFiles, err := dir.Search((*dirToSearch), (*fileExtToScan), skipPathRegex)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -122,7 +123,7 @@ func main() {
 	var scanErrorCnt uint64
 	scanErrorCnt = 0
 	for _, paths := range file.Chunks(foundFiles) {
-		for source := range file.ScanKorean(&paths, *verbose, lineScanner, mayBeComment) {
+		for source := range file.ScanFiles(&paths, *verbose, matchRegex, ignoreRegex) {
 			if err := source.Error(); err != nil {
 				scanErrorCnt++
 				if *verbose || *errorOnly {

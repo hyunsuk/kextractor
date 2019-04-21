@@ -36,15 +36,15 @@ func Search(dir string, filterByFileExt string, skip *regexp.Regexp) (*[]string,
 	return &paths, err
 }
 
-// MakeSkipPathRegexp ...
-func MakeSkipPathRegexp(skipPaths *string) (*regexp.Regexp, error) {
+// MakeSkipPathRegex ...
+func MakeSkipPathRegex(skipPaths *string) (*regexp.Regexp, error) {
 	paths := strings.Split(*skipPaths, ",")
 	(*skipPaths) = strings.Join(paths, "|")
-	skipPathRegexp, err := regexp.Compile(*skipPaths)
+	skipPathRegex, err := regexp.Compile(*skipPaths)
 	if err != nil {
 		return nil, err
 	}
-	return skipPathRegexp, nil
+	return skipPathRegex, nil
 }
 
 // Check ...
