@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
-	memprofile = flag.String("memprofile", "", "write memory profile to `file`")
+	cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to `file`.")
+	memprofile = flag.String("memprofile", "", "Write memory profile to `file`.")
 
 	dirToSearch   = flag.String("d", conf.DefaultDir, "Directory to search.")
 	fileExtToScan = flag.String("f", conf.DefaultFileExt, "File extension to scan.")

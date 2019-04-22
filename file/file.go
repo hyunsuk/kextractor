@@ -22,7 +22,7 @@ type Source struct {
 	path        string
 	matchRegex  *regexp.Regexp
 	ignoreRegex *regexp.Regexp
-	foundLines  map[int]string
+	foundLines  map[int][]byte
 	isScanned   bool
 	scanError   error
 }
@@ -33,7 +33,7 @@ func New(path string, matchRegex *regexp.Regexp, ignoreRegex *regexp.Regexp) *So
 		path,
 		matchRegex,
 		ignoreRegex,
-		map[int]string{},
+		map[int][]byte{},
 		false,
 		nil,
 	}
@@ -51,9 +51,9 @@ func (d *Source) Scan() {
 
 	reader := bufio.NewReader(f)
 	lineNumber := startLineNumber
-	pre := []byte{}
+	newLine := []byte{}
 	for {
-		line, isPrefix, err := reader.ReadLine()
+		lineChunk, isPrefix, err := reader.ReadLine()
 		if err == io.EOF {
 			break
 		}
@@ -62,21 +62,22 @@ func (d *Source) Scan() {
 			break
 		}
 
-		pre = append(pre, line...)
+		newLine = append(newLine, lineChunk...)
 		if isPrefix {
 			continue
 		}
 
-		texts := string(pre)
-		pre = []byte{}
-		if d.ignoreRegex != nil && d.ignoreRegex.MatchString(texts) {
+		if d.ignoreRegex != nil && d.ignoreRegex.Match(newLine) {
+			newLine = []byte{}
 			lineNumber++
 			continue
 		}
 
-		if d.matchRegex != nil && d.matchRegex.MatchString(texts) {
-			d.foundLines[lineNumber] = texts
+		if d.matchRegex != nil && d.matchRegex.Match(newLine) {
+			d.foundLines[lineNumber] = newLine
 		}
+
+		newLine = []byte{}
 		lineNumber++
 	}
 	d.isScanned = true
@@ -93,7 +94,7 @@ func (d *Source) Error() error {
 }
 
 // FoundLines ...
-func (d *Source) FoundLines() *map[int]string {
+func (d *Source) FoundLines() *map[int][]byte {
 	return &d.foundLines
 }
 
@@ -160,9 +161,9 @@ func ScanFiles(filePaths *[]string, verbose bool, matchRegex *regexp.Regexp, ign
 				fmt.Printf("[%s] scanning for \"%s\" \n", filePath, matchRegex.String())
 			}
 
-			fileData := New(filePath, matchRegex, ignoreRegex)
-			fileData.Scan()
-			cp <- fileData
+			source := New(filePath, matchRegex, ignoreRegex)
+			source.Scan()
+			cp <- source
 		}(filePath)
 	}
 
