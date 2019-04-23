@@ -40,11 +40,7 @@ func Search(dir string, filterByFileExt string, skip *regexp.Regexp) (*[]string,
 func MakeSkipPathRegex(skipPaths *string) (*regexp.Regexp, error) {
 	paths := strings.Split(*skipPaths, ",")
 	(*skipPaths) = strings.Join(paths, "|")
-	skipPathRegex, err := regexp.Compile(*skipPaths)
-	if err != nil {
-		return nil, err
-	}
-	return skipPathRegex, nil
+	return regexp.Compile(*skipPaths)
 }
 
 // Check ...

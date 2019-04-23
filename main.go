@@ -96,11 +96,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	matchRegex, ignoreRegex, err := file.MakeRegexForScan(conf.RegexStrToKorean, *ignorePattern)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	fmt.Printf("search for files [*.%s] in [%s] directory\n", (*fileExtToScan), (*dirToSearch))
 	foundFiles, err := dir.Search((*dirToSearch), (*fileExtToScan), skipPathRegex)
 	if err != nil {
@@ -117,6 +112,11 @@ func main() {
 		if !shouldScan(foundFilesCnt) {
 			os.Exit(0)
 		}
+	}
+
+	matchRegex, ignoreRegex, err := file.MakeRegexForScan(conf.RegexStrToKorean, *ignorePattern)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	containKorean := []file.Source{}

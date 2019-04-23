@@ -121,7 +121,7 @@ func MakeRegexForScan(match string, ignore string) (*regexp.Regexp, *regexp.Rege
 	if match != "" {
 		regex, err := regexp.Compile(match)
 		if err != nil {
-			return nil, nil, err
+			return matchRegex, ignoreRegex, err
 		}
 		matchRegex = regex
 	}
@@ -129,7 +129,7 @@ func MakeRegexForScan(match string, ignore string) (*regexp.Regexp, *regexp.Rege
 	if ignore != "" {
 		regex, err := regexp.Compile(ignore)
 		if err != nil {
-			return nil, nil, err
+			return matchRegex, ignoreRegex, err
 		}
 		ignoreRegex = regex
 	}
