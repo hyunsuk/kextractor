@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"sort"
 	"strings"
 
 	"github.com/loganstone/kpick/conf"
@@ -137,6 +138,10 @@ func main() {
 			}
 		}
 	}
+
+	sort.Slice(containKorean, func(i, j int) bool {
+		return containKorean[i].Path() < containKorean[j].Path()
+	})
 
 	report(foundFilesCnt, scanErrorCnt, &containKorean)
 
