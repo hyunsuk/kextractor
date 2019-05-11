@@ -50,15 +50,14 @@ func (d *Source) Scan() {
 	defer f.Close()
 
 	reader := bufio.NewReader(f)
-	lineNumber := startLineNumber
 	newLine := []byte{}
+	lineNumber := startLineNumber
 	for {
 		lineChunk, isPrefix, err := reader.ReadLine()
-		if err == io.EOF {
-			break
-		}
 		if err != nil {
-			d.scanError = err
+			if err != io.EOF {
+				d.scanError = err
+			}
 			break
 		}
 
