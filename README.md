@@ -17,6 +17,29 @@ $ go get github.com/loganstone/kpick
 
 ```shell
 $ kpick -d /some-directory -f js
+
+```
+
+### Usage of kpick
+
+```shell
+$ kpick -h
+Usage of kpick:
+  -cpuprofile file
+        Write cpu profile to file.
+  -d string
+        Directory to search. (default ".")
+  -e    Make output error only.
+  -f string
+        File extension to scan. (default "*")
+  -i    Interactive scanning.
+  -igg string
+        Pattern for line to ignore when scanning file.
+  -memprofile file
+        Write memory profile to file.
+  -s string
+        Directories to skip from search.(delimiter ',') (default ".git,tmp")
+  -v    Make some output more verbose.
 ```
 
 ## Key Features
