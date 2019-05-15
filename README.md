@@ -40,6 +40,15 @@ Usage of kpick:
   -s string
         Directories to skip from search.(delimiter ',') (default ".git,tmp")
   -v    Make some output more verbose.
+
+```
+
+## Profiling example
+
+```shell
+$ kpick -d ../exchange-demo -f js -cpuprofile cpu.prof -memprofile mem.prof -igg //
+$ go tool pprof -http 0.0.0.0:9000 cpu.prof
+$ go tool pprof -http 0.0.0.0:9000 mem.prof
 ```
 
 ## Key Features
