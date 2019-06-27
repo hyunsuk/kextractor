@@ -28,11 +28,11 @@ type Source struct {
 }
 
 // New ...
-func New(path string, matchRegex *regexp.Regexp, ignoreRegex *regexp.Regexp) *Source {
+func New(path string, m, ig *regexp.Regexp) *Source {
 	return &Source{
 		path,
-		matchRegex,
-		ignoreRegex,
+		m,
+		ig,
 		map[int][]byte{},
 		false,
 		nil,
@@ -40,10 +40,10 @@ func New(path string, matchRegex *regexp.Regexp, ignoreRegex *regexp.Regexp) *So
 }
 
 // Scan ...
-func (d *Source) Scan() {
-	f, err := os.Open(d.path)
+func (s *Source) Scan() {
+	f, err := os.Open(s.path)
 	if err != nil {
-		d.scanError = err
+		s.scanError = err
 		return
 	}
 
@@ -56,7 +56,7 @@ func (d *Source) Scan() {
 		lineChunk, isPrefix, err := reader.ReadLine()
 		if err != nil {
 			if err != io.EOF {
-				d.scanError = err
+				s.scanError = err
 			}
 			break
 		}
@@ -66,74 +66,69 @@ func (d *Source) Scan() {
 			continue
 		}
 
-		if d.ignoreRegex != nil && d.ignoreRegex.Match(newLine) {
+		if s.ignoreRegex != nil && s.ignoreRegex.Match(newLine) {
 			newLine = []byte{}
 			lineNumber++
 			continue
 		}
 
-		if d.matchRegex != nil && d.matchRegex.Match(newLine) {
-			d.foundLines[lineNumber] = newLine
+		if s.matchRegex != nil && s.matchRegex.Match(newLine) {
+			s.foundLines[lineNumber] = newLine
 		}
 
 		newLine = []byte{}
 		lineNumber++
 	}
-	d.isScanned = true
+	s.isScanned = true
 }
 
 // Path ...
-func (d *Source) Path() string {
-	return d.path
+func (s *Source) Path() string {
+	return s.path
 }
 
 // Error ...
-func (d *Source) Error() error {
-	return d.scanError
+func (s *Source) Error() error {
+	return s.scanError
 }
 
 // FoundLines ...
-func (d *Source) FoundLines() *map[int][]byte {
-	return &d.foundLines
+func (s *Source) FoundLines() *map[int][]byte {
+	return &s.foundLines
 }
 
 // PrintFoundLines ...
-func (d *Source) PrintFoundLines() {
-	keys := make([]int, len(d.foundLines))
+func (s *Source) PrintFoundLines() {
+	keys := make([]int, len(s.foundLines))
 	i := 0
-	for k := range d.foundLines {
+	for k := range s.foundLines {
 		keys[i] = k
 		i++
 	}
 
 	sort.Ints(keys)
 	for _, k := range keys {
-		v, _ := d.foundLines[k]
+		v, _ := s.foundLines[k]
 		fmt.Printf("%d: %s\n", k, v)
 	}
 }
 
 // MakeRegexForScan ...
-func MakeRegexForScan(match string, ignore string) (*regexp.Regexp, *regexp.Regexp, error) {
-	var matchRegex *regexp.Regexp
-	var ignoreRegex *regexp.Regexp
+func MakeRegexForScan(match, ignore string) (m, ig *regexp.Regexp, err error) {
 	if match != "" {
-		regex, err := regexp.Compile(match)
+		m, err = regexp.Compile(match)
 		if err != nil {
-			return matchRegex, ignoreRegex, err
+			return
 		}
-		matchRegex = regex
 	}
 
 	if ignore != "" {
-		regex, err := regexp.Compile(ignore)
+		ig, err = regexp.Compile(ignore)
 		if err != nil {
-			return matchRegex, ignoreRegex, err
+			return
 		}
-		ignoreRegex = regex
 	}
-
-	return matchRegex, ignoreRegex, nil
+	return
 }
 
 // LimitNumberOfFiles ...
@@ -147,7 +142,7 @@ func LimitNumberOfFiles() (uint64, error) {
 }
 
 // ScanFiles ...
-func ScanFiles(filePaths *[]string, verbose bool, matchRegex *regexp.Regexp, ignoreRegex *regexp.Regexp) <-chan *Source {
+func ScanFiles(filePaths *[]string, verbose bool, m, ig *regexp.Regexp) <-chan *Source {
 	cp := make(chan *Source)
 
 	var wg sync.WaitGroup
@@ -157,10 +152,10 @@ func ScanFiles(filePaths *[]string, verbose bool, matchRegex *regexp.Regexp, ign
 		go func(filePath string) {
 			defer wg.Done()
 			if verbose {
-				fmt.Printf("[%s] scanning for \"%s\" \n", filePath, matchRegex.String())
+				fmt.Printf("[%s] scanning for \"%s\" \n", filePath, m.String())
 			}
 
-			source := New(filePath, matchRegex, ignoreRegex)
+			source := New(filePath, m, ig)
 			source.Scan()
 			cp <- source
 		}(filePath)

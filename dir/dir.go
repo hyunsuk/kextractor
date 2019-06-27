@@ -11,7 +11,7 @@ import (
 )
 
 // Search ...
-func Search(dir string, filterByFileExt string, skip *regexp.Regexp) (*[]string, error) {
+func Search(dir, filterByFileExt string, skip *regexp.Regexp) (*[]string, error) {
 	var paths []string
 	err := filepath.Walk(dir,
 		func(path string, f os.FileInfo, err error) error {
