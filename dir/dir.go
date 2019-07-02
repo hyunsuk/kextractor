@@ -2,6 +2,7 @@ package dir
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -47,10 +48,21 @@ func MakeSkipPathRegex(skipPaths *string) (*regexp.Regexp, error) {
 func Check(path *string) error {
 	dirInfo, err := os.Stat((*path))
 	if err != nil {
+		// TODO(logan): Should test.
+		if os.IsPermission(err) {
+			mode := dirInfo.Mode()
+			log.Printf("'%s' permission is '%s'\n", (*path), mode.Perm())
+		}
 		return err
 	}
 
-	if !dirInfo.IsDir() {
+	mode := dirInfo.Mode()
+
+	if mode.IsRegular() {
+		return fmt.Errorf("'%s' is regular file", (*path))
+	}
+
+	if !mode.IsDir() {
 		return fmt.Errorf("'%s' is not directory", (*path))
 	}
 	return nil
