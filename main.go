@@ -29,17 +29,17 @@ var (
 	errorOnly     = flag.Bool("e", false, "Make output error only.")
 )
 
-func report(filesCnt uint64, errorCnt uint64, containKorean []file.Source) {
+func report(foundFilesCnt uint64, scanErrorsCnt uint64, filesContainingKorean []file.Source) {
 	if !(*errorOnly) {
-		for _, f := range containKorean {
+		for _, f := range filesContainingKorean {
 			fmt.Println(f.Path())
 			f.PrintFoundLines()
 		}
 	}
-	fmt.Printf("[%d] scanning files\n", filesCnt)
-	fmt.Printf("[%d] error \n", errorCnt)
-	fmt.Printf("[%d] success \n", filesCnt-errorCnt)
-	fmt.Printf("[%d] files containing korean\n", len(containKorean))
+	fmt.Printf("[%d] scanning files\n", foundFilesCnt)
+	fmt.Printf("[%d] error \n", scanErrorsCnt)
+	fmt.Printf("[%d] success \n", foundFilesCnt-scanErrorsCnt)
+	fmt.Printf("[%d] files containing korean\n", len(filesContainingKorean))
 }
 
 func shouldScan(foundFilesCnt uint64) bool {
@@ -83,16 +83,12 @@ func main() {
 		(*dirToSearch) = currentDir
 	}
 
-	err := dir.Check(dirToSearch)
+	err := dir.Check(*dirToSearch)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if (*skipPaths) != conf.DefaultSkipPaths {
-		(*skipPaths) += "," + conf.DefaultSkipPaths
-	}
-
-	skipPathRegex, err := dir.MakeSkipPathRegex(skipPaths)
+	skipPathRegex, err := dir.MakeSkipPathRegex(*skipPaths)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -120,29 +116,29 @@ func main() {
 		log.Fatal(err)
 	}
 
-	containKorean := []file.Source{}
-	var scanErrorCnt uint64
+	filesContainingKorean := []file.Source{}
+	var scanErrorsCnt uint64
 	for _, paths := range file.Chunks(foundFiles) {
 		for source := range file.ScanFiles(paths, *verbose, matchRegex, ignoreRegex) {
 			if err := source.Error(); err != nil {
-				scanErrorCnt++
+				scanErrorsCnt++
 				if *verbose || *errorOnly {
 					fmt.Printf("[%s] scanning error - %s\n", source.Path(), err)
 				}
 				continue
 			}
 
-			if len(*source.FoundLines()) > 0 {
-				containKorean = append(containKorean, (*source))
+			if len(source.FoundLines()) > 0 {
+				filesContainingKorean = append(filesContainingKorean, (*source))
 			}
 		}
 	}
 
-	sort.Slice(containKorean, func(i, j int) bool {
-		return containKorean[i].Path() < containKorean[j].Path()
+	sort.Slice(filesContainingKorean, func(i, j int) bool {
+		return filesContainingKorean[i].Path() < filesContainingKorean[j].Path()
 	})
 
-	report(foundFilesCnt, scanErrorCnt, containKorean)
+	report(foundFilesCnt, scanErrorsCnt, filesContainingKorean)
 
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)

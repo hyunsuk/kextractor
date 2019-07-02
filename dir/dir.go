@@ -38,19 +38,23 @@ func Search(dir, filterByFileExt string, skip *regexp.Regexp) ([]string, error) 
 }
 
 // MakeSkipPathRegex ...
-func MakeSkipPathRegex(skipPaths *string) (*regexp.Regexp, error) {
-	paths := strings.Split(*skipPaths, ",")
+func MakeSkipPathRegex(skipPaths string) (*regexp.Regexp, error) {
+	if skipPaths != conf.DefaultSkipPaths {
+		skipPaths += "," + conf.DefaultSkipPaths
+	}
+
+	paths := strings.Split(skipPaths, ",")
 	return regexp.Compile(strings.Join(paths, "|"))
 }
 
 // Check ...
-func Check(path *string) error {
-	dirInfo, err := os.Stat((*path))
+func Check(path string) error {
+	dirInfo, err := os.Stat(path)
 	if err != nil {
 		// TODO(logan): Should test.
 		if os.IsPermission(err) {
 			mode := dirInfo.Mode()
-			log.Printf("'%s' permission is '%s'\n", (*path), mode.Perm())
+			log.Printf("'%s' permission is '%s'\n", path, mode.Perm())
 		}
 		return err
 	}
@@ -58,11 +62,11 @@ func Check(path *string) error {
 	mode := dirInfo.Mode()
 
 	if mode.IsRegular() {
-		return fmt.Errorf("'%s' is regular file", (*path))
+		return fmt.Errorf("'%s' is regular file", path)
 	}
 
 	if !mode.IsDir() {
-		return fmt.Errorf("'%s' is not directory", (*path))
+		return fmt.Errorf("'%s' is not directory", path)
 	}
 	return nil
 }

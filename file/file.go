@@ -93,23 +93,23 @@ func (s *Source) Error() error {
 }
 
 // FoundLines ...
-func (s *Source) FoundLines() *map[int][]byte {
-	return &s.foundLines
+func (s *Source) FoundLines() map[int][]byte {
+	return s.foundLines
 }
 
 // PrintFoundLines ...
 func (s *Source) PrintFoundLines() {
-	keys := make([]int, len(s.foundLines))
+	lines := make([]int, len(s.foundLines))
 	i := 0
 	for k := range s.foundLines {
-		keys[i] = k
+		lines[i] = k
 		i++
 	}
 
-	sort.Ints(keys)
-	for _, k := range keys {
-		v, _ := s.foundLines[k]
-		fmt.Printf("%d: %s\n", k, v)
+	sort.Ints(lines)
+	for _, line := range lines {
+		v, _ := s.foundLines[line]
+		fmt.Printf("%d: %s\n", line, v)
 	}
 }
 
