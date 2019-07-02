@@ -142,13 +142,13 @@ func LimitNumberOfFiles() (uint64, error) {
 }
 
 // ScanFiles ...
-func ScanFiles(filePaths *[]string, verbose bool, m, ig *regexp.Regexp) <-chan *Source {
+func ScanFiles(filePaths []string, verbose bool, m, ig *regexp.Regexp) <-chan *Source {
 	cp := make(chan *Source)
 
 	var wg sync.WaitGroup
-	wg.Add(len(*filePaths))
+	wg.Add(len(filePaths))
 
-	for _, filePath := range *filePaths {
+	for _, filePath := range filePaths {
 		go func(filePath string) {
 			defer wg.Done()
 			if verbose {
@@ -169,8 +169,8 @@ func ScanFiles(filePaths *[]string, verbose bool, m, ig *regexp.Regexp) <-chan *
 }
 
 // Chunks ...
-func Chunks(foundFiles *[]string) [][]string {
-	foundFilesCnt := uint64(len(*foundFiles))
+func Chunks(foundFiles []string) [][]string {
+	foundFilesCnt := uint64(len(foundFiles))
 	chunkSize, err := LimitNumberOfFiles()
 	if err != nil {
 		chunkSize = conf.DefaultChunksSizeToScan
@@ -191,7 +191,7 @@ func Chunks(foundFiles *[]string) [][]string {
 			end = foundFilesCnt
 		}
 
-		chunks = append(chunks, (*foundFiles)[i:end])
+		chunks = append(chunks, foundFiles[i:end])
 	}
 	return chunks
 }

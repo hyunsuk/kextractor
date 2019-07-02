@@ -29,9 +29,9 @@ var (
 	errorOnly     = flag.Bool("e", false, "Make output error only.")
 )
 
-func report(filesCnt uint64, errorCnt uint64, containKorean *[]file.Source) {
+func report(filesCnt uint64, errorCnt uint64, containKorean []file.Source) {
 	if !(*errorOnly) {
-		for _, f := range *containKorean {
+		for _, f := range containKorean {
 			fmt.Println(f.Path())
 			f.PrintFoundLines()
 		}
@@ -39,7 +39,7 @@ func report(filesCnt uint64, errorCnt uint64, containKorean *[]file.Source) {
 	fmt.Printf("[%d] scanning files\n", filesCnt)
 	fmt.Printf("[%d] error \n", errorCnt)
 	fmt.Printf("[%d] success \n", filesCnt-errorCnt)
-	fmt.Printf("[%d] files containing korean\n", len(*containKorean))
+	fmt.Printf("[%d] files containing korean\n", len(containKorean))
 }
 
 func shouldScan(foundFilesCnt uint64) bool {
@@ -103,7 +103,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	foundFilesCnt := uint64(len(*foundFiles))
+	foundFilesCnt := uint64(len(foundFiles))
 	if foundFilesCnt == 0 {
 		fmt.Printf("[*.%s] file not found in [%s] directory\n", (*fileExtToScan), (*dirToSearch))
 		os.Exit(0)
@@ -122,9 +122,8 @@ func main() {
 
 	containKorean := []file.Source{}
 	var scanErrorCnt uint64
-	scanErrorCnt = 0
 	for _, paths := range file.Chunks(foundFiles) {
-		for source := range file.ScanFiles(&paths, *verbose, matchRegex, ignoreRegex) {
+		for source := range file.ScanFiles(paths, *verbose, matchRegex, ignoreRegex) {
 			if err := source.Error(); err != nil {
 				scanErrorCnt++
 				if *verbose || *errorOnly {
@@ -143,7 +142,7 @@ func main() {
 		return containKorean[i].Path() < containKorean[j].Path()
 	})
 
-	report(foundFilesCnt, scanErrorCnt, &containKorean)
+	report(foundFilesCnt, scanErrorCnt, containKorean)
 
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)

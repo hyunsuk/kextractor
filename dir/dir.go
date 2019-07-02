@@ -12,7 +12,7 @@ import (
 )
 
 // Search ...
-func Search(dir, filterByFileExt string, skip *regexp.Regexp) (*[]string, error) {
+func Search(dir, filterByFileExt string, skip *regexp.Regexp) ([]string, error) {
 	var paths []string
 	err := filepath.Walk(dir,
 		func(path string, f os.FileInfo, err error) error {
@@ -34,7 +34,7 @@ func Search(dir, filterByFileExt string, skip *regexp.Regexp) (*[]string, error)
 			paths = append(paths, path)
 			return nil
 		})
-	return &paths, err
+	return paths, err
 }
 
 // MakeSkipPathRegex ...
