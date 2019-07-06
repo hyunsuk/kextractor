@@ -20,9 +20,9 @@ var (
 	cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to `file`.")
 	memprofile = flag.String("memprofile", "", "Write memory profile to `file`.")
 
-	dirToSearch   = flag.String("d", conf.DefaultDir, "Directory to search.")
+	dirToFind     = flag.String("d", conf.DefaultDir, "Directory to find files.")
 	fileExtToScan = flag.String("f", conf.DefaultFileExt, "File extension to scan.")
-	skipPaths     = flag.String("s", conf.DefaultSkipPaths, "Directories to skip from search.(delimiter ',')")
+	skipPaths     = flag.String("s", conf.DefaultSkipPaths, "Directories to skip walk.(delimiter ',')")
 	ignorePattern = flag.String("igg", "", "Pattern for line to ignore when scanning file.")
 	verbose       = flag.Bool("v", false, "Make some output more verbose.")
 	interactive   = flag.Bool("i", false, "Interactive scanning.")
@@ -75,15 +75,15 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	if (*dirToSearch) == "" || (*dirToSearch) == conf.DefaultDir {
+	if (*dirToFind) == "" || (*dirToFind) == conf.DefaultDir {
 		currentDir, err := os.Getwd()
 		if err != nil {
 			log.Fatal(err)
 		}
-		(*dirToSearch) = currentDir
+		(*dirToFind) = currentDir
 	}
 
-	err := dir.Check(*dirToSearch)
+	err := dir.Check(*dirToFind)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,15 +93,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("search for files [*.%s] in [%s] directory\n", (*fileExtToScan), (*dirToSearch))
-	foundFiles, err := dir.Search((*dirToSearch), (*fileExtToScan), skipPathRegex)
+	fmt.Printf("find for files [*.%s] in [%s] directory\n", (*fileExtToScan), (*dirToFind))
+	foundFiles, err := dir.Find((*dirToFind), (*fileExtToScan), skipPathRegex)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	foundFilesCnt := uint64(len(foundFiles))
 	if foundFilesCnt == 0 {
-		fmt.Printf("[*.%s] file not found in [%s] directory\n", (*fileExtToScan), (*dirToSearch))
+		fmt.Printf("[*.%s] file not found in [%s] directory\n", (*fileExtToScan), (*dirToFind))
 		os.Exit(0)
 	}
 

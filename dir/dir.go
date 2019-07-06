@@ -11,8 +11,8 @@ import (
 	"github.com/loganstone/kpick/conf"
 )
 
-// Search ...
-func Search(dir, filterByFileExt string, skip *regexp.Regexp) ([]string, error) {
+// Find ...
+func Find(dir, filterByFileExt string, skip *regexp.Regexp) ([]string, error) {
 	var paths []string
 	err := filepath.Walk(dir,
 		func(path string, f os.FileInfo, err error) error {
