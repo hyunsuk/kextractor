@@ -12,9 +12,9 @@ import (
 )
 
 // Find ...
-func Find(dir, filterByFileExt string, skip *regexp.Regexp) ([]string, error) {
+func Find(rootPath, matchFileExt string, skip *regexp.Regexp) ([]string, error) {
 	var paths []string
-	err := filepath.Walk(dir,
+	err := filepath.Walk(rootPath,
 		func(path string, f os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -24,9 +24,9 @@ func Find(dir, filterByFileExt string, skip *regexp.Regexp) ([]string, error) {
 				return nil
 			}
 
-			if filterByFileExt != "" && filterByFileExt != conf.DefaultFileExt {
+			if matchFileExt != "" && matchFileExt != conf.DefaultFilenameExt {
 				v := strings.Split(f.Name(), ".")
-				if v[len(v)-1] == filterByFileExt {
+				if v[len(v)-1] == matchFileExt {
 					paths = append(paths, path)
 				}
 				return nil

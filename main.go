@@ -21,7 +21,7 @@ var (
 	memprofile = flag.String("memprofile", "", "Write memory profile to `file`.")
 
 	dirToFind     = flag.String("d", conf.DefaultDir, "Directory to find files.")
-	fileExtToScan = flag.String("f", conf.DefaultFileExt, "File extension to scan.")
+	fileExtToScan = flag.String("f", conf.DefaultFilenameExt, "Filename extension to scan.")
 	skipPaths     = flag.String("s", conf.MustIncludeSkipPaths, "Directories to skip walk.(delimiter ',')")
 	ignorePattern = flag.String("igg", "", "Pattern for line to ignore when scanning file.")
 	verbose       = flag.Bool("v", false, "Make some output more verbose.")
