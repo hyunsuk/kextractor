@@ -9,8 +9,6 @@ import (
 	"sort"
 	"sync"
 	"syscall"
-
-	"github.com/loganstone/kpick/conf"
 )
 
 const (
@@ -131,14 +129,13 @@ func MakeRegexForScan(match, ignore string) (m, ig *regexp.Regexp, err error) {
 	return
 }
 
-// LimitNumberOfFiles ...
-func LimitNumberOfFiles() (uint64, error) {
+func limitNumberOfFiles() uint64 {
 	var rLimit syscall.Rlimit
 	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
 	if err != nil {
-		return 0, err
+		return 2048
 	}
-	return rLimit.Cur, nil
+	return rLimit.Cur
 }
 
 // ScanFiles ...
@@ -171,10 +168,7 @@ func ScanFiles(filePaths []string, verbose bool, m, ig *regexp.Regexp) <-chan *S
 // Chunks ...
 func Chunks(foundFiles []string) [][]string {
 	foundFilesCnt := uint64(len(foundFiles))
-	chunkSize, err := LimitNumberOfFiles()
-	if err != nil {
-		chunkSize = conf.DefaultChunksSizeToScan
-	}
+	chunkSize := limitNumberOfFiles()
 
 	// NOTE: "too many open files" io error 회피
 	// 현재 열려있는 파일 수를 확인하는 것보다 더 간단하고,

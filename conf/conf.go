@@ -1,14 +1,13 @@
 package conf
 
 const (
-	// DefaultDir ...
+	// DefaultDir used when is no value of '-d' option
 	DefaultDir = "."
-	// DefaultFileExt ...
+	// DefaultFileExt used when is no value od '-f' option
 	DefaultFileExt = "*"
-	// DefaultChunksSizeToScan ...
-	DefaultChunksSizeToScan = 2048
-	// DefaultSkipPaths ...
-	DefaultSkipPaths = ".git,tmp"
-	// RegexStrToKorean ...
+	// MustIncludeSkipPaths add directories that not need to be find,
+	// typing '-s .git' every time is annoying.
+	MustIncludeSkipPaths = ".git,tmp"
+	// RegexStrToKorean is a regular expression to look up Korean(Hangul)
 	RegexStrToKorean = "\\p{Hangul}"
 )

@@ -22,7 +22,7 @@ var (
 
 	dirToFind     = flag.String("d", conf.DefaultDir, "Directory to find files.")
 	fileExtToScan = flag.String("f", conf.DefaultFileExt, "File extension to scan.")
-	skipPaths     = flag.String("s", conf.DefaultSkipPaths, "Directories to skip walk.(delimiter ',')")
+	skipPaths     = flag.String("s", conf.MustIncludeSkipPaths, "Directories to skip walk.(delimiter ',')")
 	ignorePattern = flag.String("igg", "", "Pattern for line to ignore when scanning file.")
 	verbose       = flag.Bool("v", false, "Make some output more verbose.")
 	interactive   = flag.Bool("i", false, "Interactive scanning.")

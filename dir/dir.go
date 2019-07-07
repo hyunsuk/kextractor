@@ -39,8 +39,8 @@ func Find(dir, filterByFileExt string, skip *regexp.Regexp) ([]string, error) {
 
 // MakeSkipPathRegex ...
 func MakeSkipPathRegex(skipPaths string) (*regexp.Regexp, error) {
-	if skipPaths != conf.DefaultSkipPaths {
-		skipPaths += "," + conf.DefaultSkipPaths
+	if skipPaths != conf.MustIncludeSkipPaths {
+		skipPaths += "," + conf.MustIncludeSkipPaths
 	}
 
 	paths := strings.Split(skipPaths, ",")
