@@ -11,30 +11,18 @@ import (
 	"syscall"
 )
 
-const (
-	startLineNumber = 1
-)
-
 // Source ...
 type Source struct {
 	path        string
 	matchRegex  *regexp.Regexp
 	ignoreRegex *regexp.Regexp
 	foundLines  map[int][]byte
-	isScanned   bool
 	scanError   error
 }
 
 // New ...
 func New(path string, m, ig *regexp.Regexp) *Source {
-	return &Source{
-		path,
-		m,
-		ig,
-		map[int][]byte{},
-		false,
-		nil,
-	}
+	return &Source{path, m, ig, map[int][]byte{}, nil}
 }
 
 // Scan ...
@@ -48,10 +36,11 @@ func (s *Source) Scan() {
 	defer f.Close()
 
 	reader := bufio.NewReader(f)
-	newLine := []byte{}
-	lineNumber := startLineNumber
+	line := []byte{}
+	var lineNumber int
+
 	for {
-		lineChunk, isPrefix, err := reader.ReadLine()
+		chunk, isPrefix, err := reader.ReadLine()
 		if err != nil {
 			if err != io.EOF {
 				s.scanError = err
@@ -59,25 +48,19 @@ func (s *Source) Scan() {
 			break
 		}
 
-		newLine = append(newLine, lineChunk...)
+		line = append(line, chunk...)
 		if isPrefix {
 			continue
 		}
 
-		if s.ignoreRegex != nil && s.ignoreRegex.Match(newLine) {
-			newLine = []byte{}
-			lineNumber++
-			continue
-		}
-
-		if s.matchRegex != nil && s.matchRegex.Match(newLine) {
-			s.foundLines[lineNumber] = newLine
-		}
-
-		newLine = []byte{}
 		lineNumber++
+		ignore := s.ignoreRegex != nil && s.ignoreRegex.Match(line)
+		if !ignore && s.matchRegex != nil && s.matchRegex.Match(line) {
+			s.foundLines[lineNumber] = line
+		}
+
+		line = []byte{}
 	}
-	s.isScanned = true
 }
 
 // Path ...
@@ -97,17 +80,17 @@ func (s *Source) FoundLines() map[int][]byte {
 
 // PrintFoundLines ...
 func (s *Source) PrintFoundLines() {
-	lines := make([]int, len(s.foundLines))
-	i := 0
-	for k := range s.foundLines {
-		lines[i] = k
+	lineNumbers := make([]int, len(s.foundLines))
+	var i int
+	for lineNumber := range s.foundLines {
+		lineNumbers[i] = lineNumber
 		i++
 	}
 
-	sort.Ints(lines)
-	for _, line := range lines {
-		v, _ := s.foundLines[line]
-		fmt.Printf("%d: %s\n", line, v)
+	sort.Ints(lineNumbers)
+	for _, lineNumber := range lineNumbers {
+		lineText, _ := s.foundLines[lineNumber]
+		fmt.Printf("%d: %s\n", lineNumber, lineText)
 	}
 }
 
