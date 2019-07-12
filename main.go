@@ -118,8 +118,18 @@ func main() {
 
 	filesContainingKorean := []file.Source{}
 	var scanErrorsCnt uint64
+	beforeFn := func(filePath string) {
+		if *verbose {
+			fmt.Printf("[%s] scanning for \"%s\" \n", filePath, matchRegex.String())
+		}
+	}
+	afterFn := func(filePath string) {
+		if *verbose {
+			fmt.Printf("[%s] scanning done\n", filePath)
+		}
+	}
 	for _, paths := range file.Chunks(foundFiles) {
-		for source := range file.ScanFiles(paths, *verbose, matchRegex, ignoreRegex) {
+		for source := range file.ScanFiles(paths, matchRegex, ignoreRegex, beforeFn, afterFn) {
 			if err := source.Error(); err != nil {
 				scanErrorsCnt++
 				if *verbose || *errorOnly {

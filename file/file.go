@@ -11,6 +11,9 @@ import (
 	"syscall"
 )
 
+type beforeScanFunc func(path string)
+type afterScanFunc func(path string)
+
 // Source ...
 type Source struct {
 	path        string
@@ -122,7 +125,8 @@ func limitNumberOfFiles() uint64 {
 }
 
 // ScanFiles ...
-func ScanFiles(filePaths []string, verbose bool, m, ig *regexp.Regexp) <-chan *Source {
+func ScanFiles(filePaths []string, m, ig *regexp.Regexp,
+	beforeFn beforeScanFunc, afterFn afterScanFunc) <-chan *Source {
 	cp := make(chan *Source)
 
 	var wg sync.WaitGroup
@@ -131,12 +135,10 @@ func ScanFiles(filePaths []string, verbose bool, m, ig *regexp.Regexp) <-chan *S
 	for _, filePath := range filePaths {
 		go func(filePath string) {
 			defer wg.Done()
-			if verbose {
-				fmt.Printf("[%s] scanning for \"%s\" \n", filePath, m.String())
-			}
-
+			beforeFn(filePath)
 			source := New(filePath, m, ig)
 			source.Scan()
+			afterFn(filePath)
 			cp <- source
 		}(filePath)
 	}
