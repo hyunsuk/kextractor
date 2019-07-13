@@ -30,7 +30,7 @@ var (
 )
 
 func report(foundFilesCnt uint64, scanErrorsCnt uint64, filesContainingKorean []file.Source) {
-	if !(*errorOnly) {
+	if !*errorOnly {
 		for _, f := range filesContainingKorean {
 			fmt.Println(f.Path())
 			f.PrintFoundLines()
@@ -75,12 +75,12 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	if (*dirToFind) == "" || (*dirToFind) == conf.DefaultDir {
+	if *dirToFind == "" || *dirToFind == conf.DefaultDir {
 		currentDir, err := os.Getwd()
 		if err != nil {
 			log.Fatal(err)
 		}
-		(*dirToFind) = currentDir
+		*dirToFind = currentDir
 	}
 
 	err := dir.Check(*dirToFind)
@@ -93,15 +93,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("find for files [*.%s] in [%s] directory\n", (*fileExtToScan), (*dirToFind))
-	foundFiles, err := dir.Find((*dirToFind), (*fileExtToScan), skipPathRegex)
+	fmt.Printf("find for files [*.%s] in [%s] directory\n", *fileExtToScan, *dirToFind)
+	foundFiles, err := dir.Find(*dirToFind, *fileExtToScan, skipPathRegex)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	foundFilesCnt := uint64(len(foundFiles))
 	if foundFilesCnt == 0 {
-		fmt.Printf("[*.%s] file not found in [%s] directory\n", (*fileExtToScan), (*dirToFind))
+		fmt.Printf("[*.%s] file not found in [%s] directory\n", *fileExtToScan, *dirToFind)
 		os.Exit(0)
 	}
 
@@ -139,7 +139,7 @@ func main() {
 			}
 
 			if len(source.FoundLines()) > 0 {
-				filesContainingKorean = append(filesContainingKorean, (*source))
+				filesContainingKorean = append(filesContainingKorean, *source)
 			}
 		}
 	}
