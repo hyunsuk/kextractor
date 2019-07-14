@@ -120,7 +120,7 @@ func main() {
 	var scanErrorsCnt uint64
 	beforeFn := func(filePath string) {
 		if *verbose {
-			fmt.Printf("[%s] scanning for \"%s\" \n", filePath, matchRegex.String())
+			fmt.Printf("[%s] scanning for \"%s\"\n", filePath, matchRegex.String())
 		}
 	}
 	afterFn := func(filePath string) {
