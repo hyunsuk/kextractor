@@ -13,16 +13,6 @@ import (
 	"github.com/loganstone/kpick/profile"
 )
 
-func showFoundFiles(filesContainingKorean *file.SortedFiles) {
-	for filesContainingKorean.Len() > 0 {
-		f, ok := heap.Pop(filesContainingKorean).(*file.Source)
-		if ok {
-			fmt.Println(f.Path())
-			f.PrintFoundLines()
-		}
-	}
-}
-
 func showNumbers(foundFilesCnt int, scanErrorsCnt int, filesCntContainingKorean int) {
 	fmt.Printf("[%d] scanning files\n", foundFilesCnt)
 	fmt.Printf("[%d] error \n", scanErrorsCnt)
@@ -87,23 +77,23 @@ func main() {
 		}
 	}
 	for _, paths := range file.Chunks(foundFiles) {
-		for source := range file.ScanFiles(paths, matchRegex, ignoreRegex, beforeFn, afterFn) {
-			if err := source.Error(); err != nil {
+		for f := range file.ScanFiles(paths, matchRegex, ignoreRegex, beforeFn, afterFn) {
+			if err := f.Error(); err != nil {
 				scanErrorsCnt++
 				if opts.Verbose || opts.ErrorOnly {
-					fmt.Printf("[%s] scanning error - %s\n", source.Path(), err)
+					fmt.Printf("[%s] scanning error - %s\n", f.Path(), err)
 				}
 				continue
 			}
 
-			if len(source.FoundLines()) > 0 {
-				heap.Push(filesContainingKorean, source)
+			if len(f.FoundLines()) > 0 {
+				heap.Push(filesContainingKorean, f)
 			}
 		}
 	}
 
 	if !opts.ErrorOnly {
-		showFoundFiles(filesContainingKorean)
+		file.PrintFiles(filesContainingKorean)
 	}
 
 	showNumbers(foundFilesCnt, scanErrorsCnt, filesContainingKorean.Len())

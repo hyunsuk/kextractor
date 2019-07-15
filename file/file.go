@@ -2,6 +2,7 @@ package file
 
 import (
 	"bufio"
+	"container/heap"
 	"fmt"
 	"io"
 	"math"
@@ -15,8 +16,8 @@ import (
 type beforeScanFunc func(path string)
 type afterScanFunc func(path string)
 
-// Source ...
-type Source struct {
+// File ...
+type File struct {
 	path        string
 	matchRegex  *regexp.Regexp
 	ignoreRegex *regexp.Regexp
@@ -25,7 +26,7 @@ type Source struct {
 }
 
 // Scan ...
-func (s *Source) Scan() {
+func (s *File) Scan() {
 	f, err := os.Open(s.path)
 	if err != nil {
 		s.scanError = err
@@ -63,22 +64,22 @@ func (s *Source) Scan() {
 }
 
 // Path ...
-func (s *Source) Path() string {
+func (s *File) Path() string {
 	return s.path
 }
 
 // Error ...
-func (s *Source) Error() error {
+func (s *File) Error() error {
 	return s.scanError
 }
 
 // FoundLines ...
-func (s *Source) FoundLines() map[int][]byte {
+func (s *File) FoundLines() map[int][]byte {
 	return s.foundLines
 }
 
 // PrintFoundLines ...
-func (s *Source) PrintFoundLines() {
+func (s *File) PrintFoundLines() {
 	lineNumbers := make([]int, len(s.foundLines))
 	var i int
 	for lineNumber := range s.foundLines {
@@ -94,7 +95,7 @@ func (s *Source) PrintFoundLines() {
 }
 
 // SortedFiles .
-type SortedFiles []*Source
+type SortedFiles []*File
 
 func (s SortedFiles) Len() int {
 	return len(s)
@@ -110,7 +111,7 @@ func (s SortedFiles) Swap(i, j int) {
 
 // Push .
 func (s *SortedFiles) Push(x interface{}) {
-	*s = append(*s, x.(*Source))
+	*s = append(*s, x.(*File))
 }
 
 // Pop .
@@ -122,9 +123,8 @@ func (s *SortedFiles) Pop() interface{} {
 	return element
 }
 
-// New ...
-func New(path string, m, ig *regexp.Regexp) *Source {
-	return &Source{path, m, ig, map[int][]byte{}, nil}
+func newFile(path string, m, ig *regexp.Regexp) *File {
+	return &File{path, m, ig, map[int][]byte{}, nil}
 }
 
 // RegexForScan ...
@@ -159,8 +159,8 @@ func limitNumber() int {
 
 // ScanFiles ...
 func ScanFiles(filePaths []string, m, ig *regexp.Regexp,
-	beforeFn beforeScanFunc, afterFn afterScanFunc) <-chan *Source {
-	cp := make(chan *Source)
+	beforeFn beforeScanFunc, afterFn afterScanFunc) <-chan *File {
+	cp := make(chan *File)
 
 	var wg sync.WaitGroup
 	wg.Add(len(filePaths))
@@ -169,10 +169,10 @@ func ScanFiles(filePaths []string, m, ig *regexp.Regexp,
 		go func(filePath string) {
 			defer wg.Done()
 			beforeFn(filePath)
-			source := New(filePath, m, ig)
-			source.Scan()
+			f := newFile(filePath, m, ig)
+			f.Scan()
 			afterFn(filePath)
-			cp <- source
+			cp <- f
 		}(filePath)
 	}
 
@@ -206,4 +206,15 @@ func Chunks(foundFiles []string) [][]string {
 		chunks = append(chunks, foundFiles[i:end])
 	}
 	return chunks
+}
+
+// PrintFiles .
+func PrintFiles(files *SortedFiles) {
+	for files.Len() > 0 {
+		f, ok := heap.Pop(files).(*File)
+		if ok {
+			fmt.Println(f.Path())
+			f.PrintFoundLines()
+		}
+	}
 }
