@@ -2,35 +2,20 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"log"
 	"os"
-	"runtime"
-	"runtime/pprof"
 	"sort"
 	"strings"
 
 	"github.com/loganstone/kpick/conf"
 	"github.com/loganstone/kpick/dir"
 	"github.com/loganstone/kpick/file"
+	"github.com/loganstone/kpick/profile"
 )
 
-var (
-	cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to `file`.")
-	memprofile = flag.String("memprofile", "", "Write memory profile to `file`.")
-
-	dirToFind     = flag.String("d", conf.DefaultDir, "Directory to find files.")
-	fileExtToScan = flag.String("f", conf.DefaultFilenameExt, "Filename extension to scan.")
-	skipPaths     = flag.String("s", conf.MustIncludeSkipPaths, "Directories to skip walk.(delimiter ',')")
-	ignorePattern = flag.String("igg", "", "Pattern for line to ignore when scanning file.")
-	verbose       = flag.Bool("v", false, "Make some output more verbose.")
-	interactive   = flag.Bool("i", false, "Interactive scanning.")
-	errorOnly     = flag.Bool("e", false, "Make output error only.")
-)
-
-func report(foundFilesCnt uint64, scanErrorsCnt uint64, filesContainingKorean []file.Source) {
-	if !*errorOnly {
+func report(errorOnly bool, foundFilesCnt uint64, scanErrorsCnt uint64, filesContainingKorean []file.Source) {
+	if !errorOnly {
 		for _, f := range filesContainingKorean {
 			fmt.Println(f.Path())
 			f.PrintFoundLines()
@@ -61,57 +46,39 @@ func shouldScan(foundFilesCnt uint64) bool {
 }
 
 func main() {
-	flag.Parse()
+	opts := conf.Opts()
 
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal("could not create CPU profile: ", err)
-		}
-		defer f.Close()
-		if err := pprof.StartCPUProfile(f); err != nil {
-			log.Fatal("could not start CPU profile: ", err)
-		}
-		defer pprof.StopCPUProfile()
-	}
+	profile.CPU(opts.Cpuprofile)
 
-	if *dirToFind == "" || *dirToFind == conf.DefaultDir {
-		currentDir, err := os.Getwd()
-		if err != nil {
-			log.Fatal(err)
-		}
-		*dirToFind = currentDir
-	}
-
-	err := dir.Check(*dirToFind)
+	err := dir.Check(opts.DirToFind)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	skipPathRegex, err := dir.MakeSkipPathRegex(*skipPaths)
+	skipPathRegex, err := dir.MakeSkipPathRegex(opts.SkipPaths, ",", "|")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("find for files [*.%s] in [%s] directory\n", *fileExtToScan, *dirToFind)
-	foundFiles, err := dir.Find(*dirToFind, *fileExtToScan, skipPathRegex)
+	fmt.Printf("find for files [opts..%s] in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
+	foundFiles, err := dir.Find(opts.DirToFind, opts.FileExtToScan, skipPathRegex)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	foundFilesCnt := uint64(len(foundFiles))
 	if foundFilesCnt == 0 {
-		fmt.Printf("[*.%s] file not found in [%s] directory\n", *fileExtToScan, *dirToFind)
+		fmt.Printf("[opts..%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
 		os.Exit(0)
 	}
 
-	if *interactive {
+	if opts.Interactive {
 		if !shouldScan(foundFilesCnt) {
 			os.Exit(0)
 		}
 	}
 
-	matchRegex, ignoreRegex, err := file.MakeRegexForScan(conf.RegexStrToKorean, *ignorePattern)
+	matchRegex, ignoreRegex, err := file.MakeRegexForScan(conf.RegexStrToKorean, opts.IgnorePattern)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -119,12 +86,12 @@ func main() {
 	filesContainingKorean := []file.Source{}
 	var scanErrorsCnt uint64
 	beforeFn := func(filePath string) {
-		if *verbose {
+		if opts.Verbose {
 			fmt.Printf("[%s] scanning for \"%s\"\n", filePath, matchRegex.String())
 		}
 	}
 	afterFn := func(filePath string) {
-		if *verbose {
+		if opts.Verbose {
 			fmt.Printf("[%s] scanning done\n", filePath)
 		}
 	}
@@ -132,7 +99,7 @@ func main() {
 		for source := range file.ScanFiles(paths, matchRegex, ignoreRegex, beforeFn, afterFn) {
 			if err := source.Error(); err != nil {
 				scanErrorsCnt++
-				if *verbose || *errorOnly {
+				if opts.Verbose || opts.ErrorOnly {
 					fmt.Printf("[%s] scanning error - %s\n", source.Path(), err)
 				}
 				continue
@@ -148,17 +115,7 @@ func main() {
 		return filesContainingKorean[i].Path() < filesContainingKorean[j].Path()
 	})
 
-	report(foundFilesCnt, scanErrorsCnt, filesContainingKorean)
+	report(opts.ErrorOnly, foundFilesCnt, scanErrorsCnt, filesContainingKorean)
 
-	if *memprofile != "" {
-		f, err := os.Create(*memprofile)
-		if err != nil {
-			log.Fatal("could not create memory profile: ", err)
-		}
-		defer f.Close()
-		runtime.GC() // get up-to-date statistics
-		if err := pprof.WriteHeapProfile(f); err != nil {
-			log.Fatal("could not write memory profile: ", err)
-		}
-	}
+	profile.Mem(opts.Memprofile)
 }

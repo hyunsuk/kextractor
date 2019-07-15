@@ -1,15 +1,16 @@
 package dir
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/loganstone/kpick/conf"
 )
+
+const findAllFileExt = "*"
 
 // Find ...
 func Find(rootPath, matchFileExt string, skip *regexp.Regexp) ([]string, error) {
@@ -24,7 +25,7 @@ func Find(rootPath, matchFileExt string, skip *regexp.Regexp) ([]string, error) 
 				return nil
 			}
 
-			if matchFileExt != "" && matchFileExt != conf.DefaultFilenameExt {
+			if matchFileExt != "" && matchFileExt != findAllFileExt {
 				v := strings.Split(f.Name(), ".")
 				if v[len(v)-1] == matchFileExt {
 					paths = append(paths, path)
@@ -38,13 +39,13 @@ func Find(rootPath, matchFileExt string, skip *regexp.Regexp) ([]string, error) 
 }
 
 // MakeSkipPathRegex ...
-func MakeSkipPathRegex(skipPaths string) (*regexp.Regexp, error) {
-	if skipPaths != conf.MustIncludeSkipPaths {
-		skipPaths += "," + conf.MustIncludeSkipPaths
+func MakeSkipPathRegex(skipPaths, delimiter, separator string) (*regexp.Regexp, error) {
+	if skipPaths == "" {
+		return nil, errors.New("'skipPaths' is required")
 	}
 
-	paths := strings.Split(skipPaths, ",")
-	return regexp.Compile(strings.Join(paths, "|"))
+	paths := strings.Split(skipPaths, delimiter)
+	return regexp.Compile(strings.Join(paths, separator))
 }
 
 // Check ...
