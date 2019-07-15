@@ -1,48 +1,30 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
 	"sort"
-	"strings"
 
+	"github.com/loganstone/kpick/ask"
 	"github.com/loganstone/kpick/conf"
 	"github.com/loganstone/kpick/dir"
 	"github.com/loganstone/kpick/file"
 	"github.com/loganstone/kpick/profile"
 )
 
-func report(errorOnly bool, foundFilesCnt int, scanErrorsCnt int, filesContainingKorean []file.Source) {
-	if !errorOnly {
-		for _, f := range filesContainingKorean {
-			fmt.Println(f.Path())
-			f.PrintFoundLines()
-		}
+func showFoundFiles(filesContainingKorean []file.Source) {
+	for _, f := range filesContainingKorean {
+		fmt.Println(f.Path())
+		f.PrintFoundLines()
 	}
+}
+
+func showNumbers(foundFilesCnt int, scanErrorsCnt int, filesCntContainingKorean int) {
 	fmt.Printf("[%d] scanning files\n", foundFilesCnt)
 	fmt.Printf("[%d] error \n", scanErrorsCnt)
 	fmt.Printf("[%d] success \n", foundFilesCnt-scanErrorsCnt)
-	fmt.Printf("[%d] files containing korean\n", len(filesContainingKorean))
-}
-
-func shouldScan(foundFilesCnt int) bool {
-	var response string
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("found files [%d]. do you want to scan it? (y/n): ", foundFilesCnt)
-	response, err := reader.ReadString('\n')
-	if err != nil {
-		log.Fatal(err)
-	}
-	response = strings.Trim(response, " \n")
-	if response != "y" && response != "n" {
-		return shouldScan(foundFilesCnt)
-	}
-	if response == "n" {
-		return false
-	}
-	return true
+	fmt.Printf("[%d] files containing korean\n", filesCntContainingKorean)
 }
 
 func main() {
@@ -55,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	skipPathRegex, err := dir.MakeSkipPathRegex(opts.SkipPaths, ",", "|")
+	skipPathRegex, err := dir.SkipPathRegex(opts.SkipPaths, ",", "|")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,12 +55,17 @@ func main() {
 	}
 
 	if opts.Interactive {
-		if !shouldScan(foundFilesCnt) {
+		q := fmt.Sprintf("found files [%d]. do you want to scan it? (y/n): ", foundFilesCnt)
+		ok, err := ask.Confirm(q, "y", "n")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !ok {
 			os.Exit(0)
 		}
 	}
 
-	matchRegex, ignoreRegex, err := file.MakeRegexForScan(conf.RegexStrToKorean, opts.IgnorePattern)
+	matchRegex, ignoreRegex, err := file.RegexForScan(conf.RegexStrToKorean, opts.IgnorePattern)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,7 +102,11 @@ func main() {
 		return filesContainingKorean[i].Path() < filesContainingKorean[j].Path()
 	})
 
-	report(opts.ErrorOnly, foundFilesCnt, scanErrorsCnt, filesContainingKorean)
+	if !opts.ErrorOnly {
+		showFoundFiles(filesContainingKorean)
+	}
+
+	showNumbers(foundFilesCnt, scanErrorsCnt, len(filesContainingKorean))
 
 	profile.Mem(opts.Memprofile)
 }

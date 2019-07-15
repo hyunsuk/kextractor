@@ -38,8 +38,8 @@ func Find(rootPath, matchFileExt string, skip *regexp.Regexp) ([]string, error) 
 	return paths, err
 }
 
-// MakeSkipPathRegex ...
-func MakeSkipPathRegex(skipPaths, delimiter, separator string) (*regexp.Regexp, error) {
+// SkipPathRegex ...
+func SkipPathRegex(skipPaths, delimiter, separator string) (*regexp.Regexp, error) {
 	if skipPaths == "" {
 		return nil, errors.New("'skipPaths' is required")
 	}

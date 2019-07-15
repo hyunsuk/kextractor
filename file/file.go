@@ -98,8 +98,8 @@ func (s *Source) PrintFoundLines() {
 	}
 }
 
-// MakeRegexForScan ...
-func MakeRegexForScan(match, ignore string) (m, ig *regexp.Regexp, err error) {
+// RegexForScan ...
+func RegexForScan(match, ignore string) (m, ig *regexp.Regexp, err error) {
 	if match != "" {
 		m, err = regexp.Compile(match)
 		if err != nil {
