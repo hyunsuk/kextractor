@@ -1,10 +1,10 @@
 package main
 
 import (
+	"container/heap"
 	"fmt"
 	"log"
 	"os"
-	"sort"
 
 	"github.com/loganstone/kpick/ask"
 	"github.com/loganstone/kpick/conf"
@@ -13,10 +13,13 @@ import (
 	"github.com/loganstone/kpick/profile"
 )
 
-func showFoundFiles(filesContainingKorean []file.Source) {
-	for _, f := range filesContainingKorean {
-		fmt.Println(f.Path())
-		f.PrintFoundLines()
+func showFoundFiles(filesContainingKorean *file.SortedFiles) {
+	for filesContainingKorean.Len() > 0 {
+		f, ok := heap.Pop(filesContainingKorean).(*file.Source)
+		if ok {
+			fmt.Println(f.Path())
+			f.PrintFoundLines()
+		}
 	}
 }
 
@@ -70,7 +73,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	filesContainingKorean := []file.Source{}
+	filesContainingKorean := &file.SortedFiles{}
+	heap.Init(filesContainingKorean)
 	var scanErrorsCnt int
 	beforeFn := func(filePath string) {
 		if opts.Verbose {
@@ -93,20 +97,16 @@ func main() {
 			}
 
 			if len(source.FoundLines()) > 0 {
-				filesContainingKorean = append(filesContainingKorean, *source)
+				heap.Push(filesContainingKorean, source)
 			}
 		}
 	}
-
-	sort.Slice(filesContainingKorean, func(i, j int) bool {
-		return filesContainingKorean[i].Path() < filesContainingKorean[j].Path()
-	})
 
 	if !opts.ErrorOnly {
 		showFoundFiles(filesContainingKorean)
 	}
 
-	showNumbers(foundFilesCnt, scanErrorsCnt, len(filesContainingKorean))
+	showNumbers(foundFilesCnt, scanErrorsCnt, filesContainingKorean.Len())
 
 	profile.Mem(opts.Memprofile)
 }

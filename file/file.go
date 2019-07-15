@@ -24,11 +24,6 @@ type Source struct {
 	scanError   error
 }
 
-// New ...
-func New(path string, m, ig *regexp.Regexp) *Source {
-	return &Source{path, m, ig, map[int][]byte{}, nil}
-}
-
 // Scan ...
 func (s *Source) Scan() {
 	f, err := os.Open(s.path)
@@ -96,6 +91,40 @@ func (s *Source) PrintFoundLines() {
 		lineText, _ := s.foundLines[lineNumber]
 		fmt.Printf("%d: %s\n", lineNumber, lineText)
 	}
+}
+
+// SortedFiles .
+type SortedFiles []*Source
+
+func (s SortedFiles) Len() int {
+	return len(s)
+}
+
+func (s SortedFiles) Less(i, j int) bool {
+	return s[i].path < s[j].path
+}
+
+func (s SortedFiles) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+// Push .
+func (s *SortedFiles) Push(x interface{}) {
+	*s = append(*s, x.(*Source))
+}
+
+// Pop .
+func (s *SortedFiles) Pop() interface{} {
+	old := *s
+	n := len(old)
+	element := old[n-1]
+	*s = old[0 : n-1]
+	return element
+}
+
+// New ...
+func New(path string, m, ig *regexp.Regexp) *Source {
+	return &Source{path, m, ig, map[int][]byte{}, nil}
 }
 
 // RegexForScan ...
