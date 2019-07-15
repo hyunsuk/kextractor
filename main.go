@@ -60,7 +60,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("find for files [opts..%s] in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
+	fmt.Printf("find for files [*.%s] in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
 	foundFiles, err := dir.Find(opts.DirToFind, opts.FileExtToScan, skipPathRegex)
 	if err != nil {
 		log.Fatal(err)
@@ -68,7 +68,7 @@ func main() {
 
 	foundFilesCnt := len(foundFiles)
 	if foundFilesCnt == 0 {
-		fmt.Printf("[opts..%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
+		fmt.Printf("[*.%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
 		os.Exit(0)
 	}
 
