@@ -14,7 +14,7 @@ import (
 	"github.com/loganstone/kpick/profile"
 )
 
-func report(errorOnly bool, foundFilesCnt uint64, scanErrorsCnt uint64, filesContainingKorean []file.Source) {
+func report(errorOnly bool, foundFilesCnt int, scanErrorsCnt int, filesContainingKorean []file.Source) {
 	if !errorOnly {
 		for _, f := range filesContainingKorean {
 			fmt.Println(f.Path())
@@ -27,7 +27,7 @@ func report(errorOnly bool, foundFilesCnt uint64, scanErrorsCnt uint64, filesCon
 	fmt.Printf("[%d] files containing korean\n", len(filesContainingKorean))
 }
 
-func shouldScan(foundFilesCnt uint64) bool {
+func shouldScan(foundFilesCnt int) bool {
 	var response string
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Printf("found files [%d]. do you want to scan it? (y/n): ", foundFilesCnt)
@@ -66,7 +66,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	foundFilesCnt := uint64(len(foundFiles))
+	foundFilesCnt := len(foundFiles)
 	if foundFilesCnt == 0 {
 		fmt.Printf("[opts..%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
 		os.Exit(0)
@@ -84,7 +84,7 @@ func main() {
 	}
 
 	filesContainingKorean := []file.Source{}
-	var scanErrorsCnt uint64
+	var scanErrorsCnt int
 	beforeFn := func(filePath string) {
 		if opts.Verbose {
 			fmt.Printf("[%s] scanning for \"%s\"\n", filePath, matchRegex.String())

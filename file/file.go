@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"regexp"
 	"sort"
@@ -115,13 +116,16 @@ func MakeRegexForScan(match, ignore string) (m, ig *regexp.Regexp, err error) {
 	return
 }
 
-func limitNumberOfFiles() uint64 {
+func limitNumber() int {
 	var rLimit syscall.Rlimit
 	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
 	if err != nil {
 		return 2048
 	}
-	return rLimit.Cur
+	if rLimit.Cur > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	return int(rLimit.Cur)
 }
 
 // ScanFiles ...
@@ -152,8 +156,8 @@ func ScanFiles(filePaths []string, m, ig *regexp.Regexp,
 
 // Chunks ...
 func Chunks(foundFiles []string) [][]string {
-	foundFilesCnt := uint64(len(foundFiles))
-	chunkSize := limitNumberOfFiles()
+	foundFilesCnt := len(foundFiles)
+	chunkSize := limitNumber()
 
 	// NOTE: "too many open files" io error 회피
 	// 현재 열려있는 파일 수를 확인하는 것보다 더 간단하고,
@@ -162,7 +166,7 @@ func Chunks(foundFiles []string) [][]string {
 	chunkSize = chunkSize >> 1
 
 	var chunks [][]string
-	var i uint64
+	var i int
 	for i = 0; i < foundFilesCnt; i += chunkSize {
 		end := i + chunkSize
 
