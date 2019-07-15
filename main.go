@@ -11,6 +11,7 @@ import (
 	"github.com/loganstone/kpick/dir"
 	"github.com/loganstone/kpick/file"
 	"github.com/loganstone/kpick/profile"
+	"github.com/loganstone/kpick/regex"
 )
 
 func showNumbers(foundFilesCnt int, scanErrorsCnt int, filesCntContainingKorean int) {
@@ -30,13 +31,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	skipPathRegex, err := dir.SkipPathRegex(opts.SkipPaths, ",", "|")
+	skipPathsRegex, err := regex.SkipPaths(opts.SkipPaths, ",", "|")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("find for files [*.%s] in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
-	foundFiles, err := dir.Find(opts.DirToFind, opts.FileExtToScan, skipPathRegex)
+	foundFiles, err := dir.Find(opts.DirToFind, opts.FileExtToScan, skipPathsRegex)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,7 +59,7 @@ func main() {
 		}
 	}
 
-	matchRegex, ignoreRegex, err := file.RegexForScan(conf.RegexStrToKorean, opts.IgnorePattern)
+	matchRegex, ignoreRegex, err := regex.ForFileScan(conf.RegexStrToKorean, opts.IgnorePattern)
 	if err != nil {
 		log.Fatal(err)
 	}

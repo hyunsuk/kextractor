@@ -1,7 +1,6 @@
 package dir
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -36,16 +35,6 @@ func Find(rootPath, matchFileExt string, skip *regexp.Regexp) ([]string, error) 
 			return nil
 		})
 	return paths, err
-}
-
-// SkipPathRegex ...
-func SkipPathRegex(skipPaths, delimiter, separator string) (*regexp.Regexp, error) {
-	if skipPaths == "" {
-		return nil, errors.New("'skipPaths' is required")
-	}
-
-	paths := strings.Split(skipPaths, delimiter)
-	return regexp.Compile(strings.Join(paths, separator))
 }
 
 // Check ...

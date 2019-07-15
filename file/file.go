@@ -127,24 +127,6 @@ func newFile(path string, m, ig *regexp.Regexp) *File {
 	return &File{path, m, ig, map[int][]byte{}, nil}
 }
 
-// RegexForScan ...
-func RegexForScan(match, ignore string) (m, ig *regexp.Regexp, err error) {
-	if match != "" {
-		m, err = regexp.Compile(match)
-		if err != nil {
-			return
-		}
-	}
-
-	if ignore != "" {
-		ig, err = regexp.Compile(ignore)
-		if err != nil {
-			return
-		}
-	}
-	return
-}
-
 func limitNumber() int {
 	var rLimit syscall.Rlimit
 	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
