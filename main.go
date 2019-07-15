@@ -31,13 +31,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	skipPathsRegex, err := regex.SkipPaths(opts.SkipPaths, ",", "|")
+	skipPaths, err := regex.SkipPaths(opts.SkipPaths, ",", "|")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("find for files [*.%s] in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
-	foundFiles, err := dir.Find(opts.DirToFind, opts.FileExtToScan, skipPathsRegex)
+	foundFiles, err := dir.Find(opts.DirToFind, opts.FileExtToScan, skipPaths)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func main() {
 		}
 	}
 
-	matchRegex, ignoreRegex, err := regex.ForFileScan(conf.RegexStrToKorean, opts.IgnorePattern)
+	match, ignore, err := regex.ForFileScan(conf.KoreanPatternForRegex, opts.IgnorePattern)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func main() {
 	var scanErrorsCnt int
 	beforeFn := func(filePath string) {
 		if opts.Verbose {
-			fmt.Printf("[%s] scanning for \"%s\"\n", filePath, matchRegex.String())
+			fmt.Printf("[%s] scanning for \"%s\"\n", filePath, match.String())
 		}
 	}
 	afterFn := func(filePath string) {
@@ -78,7 +78,7 @@ func main() {
 		}
 	}
 	for _, paths := range file.Chunks(foundFiles) {
-		for f := range file.ScanFiles(paths, matchRegex, ignoreRegex, beforeFn, afterFn) {
+		for f := range file.ScanFiles(paths, match, ignore, beforeFn, afterFn) {
 			if err := f.Error(); err != nil {
 				scanErrorsCnt++
 				if opts.Verbose || opts.ErrorOnly {
