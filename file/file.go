@@ -78,8 +78,7 @@ func (s *File) FoundLines() map[int][]byte {
 	return s.foundLines
 }
 
-// PrintFoundLines ...
-func (s *File) PrintFoundLines() {
+func (s *File) printFoundLines() {
 	lineNumbers := make([]int, len(s.foundLines))
 	var i int
 	for lineNumber := range s.foundLines {
@@ -196,7 +195,7 @@ func PrintFiles(files *SortedFiles) {
 		f, ok := heap.Pop(files).(*File)
 		if ok {
 			fmt.Println(f.Path())
-			f.PrintFoundLines()
+			f.printFoundLines()
 		}
 	}
 }
