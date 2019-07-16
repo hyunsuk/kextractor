@@ -77,7 +77,7 @@ func Chunks(foundFiles []string) [][]string {
 }
 
 // PrintFiles .
-func PrintFiles(files *SortedFiles) {
+func PrintFiles(files *Heap) {
 	for files.Len() > 0 {
 		f, ok := heap.Pop(files).(*File)
 		if ok {

@@ -64,7 +64,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	filesContainingKorean := &file.SortedFiles{}
+	filesContainingKorean := &file.Heap{}
 	heap.Init(filesContainingKorean)
 	var scanErrorsCnt int
 	beforeFn := func(filePath string) {

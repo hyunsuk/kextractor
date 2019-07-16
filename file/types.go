@@ -22,16 +22,16 @@ type File struct {
 }
 
 // Scan ...
-func (s *File) Scan() {
-	f, err := os.Open(s.path)
+func (f *File) Scan() {
+	file, err := os.Open(f.path)
 	if err != nil {
-		s.scanError = err
+		f.scanError = err
 		return
 	}
 
-	defer f.Close()
+	defer file.Close()
 
-	reader := bufio.NewReader(f)
+	reader := bufio.NewReader(file)
 	line := []byte{}
 	var lineNumber int
 
@@ -39,7 +39,7 @@ func (s *File) Scan() {
 		chunk, isPrefix, err := reader.ReadLine()
 		if err != nil {
 			if err != io.EOF {
-				s.scanError = err
+				f.scanError = err
 			}
 			break
 		}
@@ -50,9 +50,9 @@ func (s *File) Scan() {
 		}
 
 		lineNumber++
-		ignore := s.ignoreRegex != nil && s.ignoreRegex.Match(line)
-		if !ignore && s.matchRegex != nil && s.matchRegex.Match(line) {
-			s.foundLines[lineNumber] = line
+		ignore := f.ignoreRegex != nil && f.ignoreRegex.Match(line)
+		if !ignore && f.matchRegex != nil && f.matchRegex.Match(line) {
+			f.foundLines[lineNumber] = line
 		}
 
 		line = []byte{}
@@ -60,60 +60,60 @@ func (s *File) Scan() {
 }
 
 // Path ...
-func (s *File) Path() string {
-	return s.path
+func (f *File) Path() string {
+	return f.path
 }
 
 // Error ...
-func (s *File) Error() error {
-	return s.scanError
+func (f *File) Error() error {
+	return f.scanError
 }
 
 // FoundLines ...
-func (s *File) FoundLines() map[int][]byte {
-	return s.foundLines
+func (f *File) FoundLines() map[int][]byte {
+	return f.foundLines
 }
 
-func (s *File) printFoundLines() {
-	lineNumbers := make([]int, len(s.foundLines))
+func (f *File) printFoundLines() {
+	lineNumbers := make([]int, len(f.foundLines))
 	var i int
-	for lineNumber := range s.foundLines {
+	for lineNumber := range f.foundLines {
 		lineNumbers[i] = lineNumber
 		i++
 	}
 
 	sort.Ints(lineNumbers)
 	for _, lineNumber := range lineNumbers {
-		lineText, _ := s.foundLines[lineNumber]
+		lineText, _ := f.foundLines[lineNumber]
 		fmt.Printf("%d: %s\n", lineNumber, lineText)
 	}
 }
 
-// SortedFiles .
-type SortedFiles []*File
+// Heap .
+type Heap []*File
 
-func (s SortedFiles) Len() int {
-	return len(s)
+func (h Heap) Len() int {
+	return len(h)
 }
 
-func (s SortedFiles) Less(i, j int) bool {
-	return s[i].path < s[j].path
+func (h Heap) Less(i, j int) bool {
+	return h[i].path < h[j].path
 }
 
-func (s SortedFiles) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+func (h Heap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
 }
 
 // Push .
-func (s *SortedFiles) Push(x interface{}) {
-	*s = append(*s, x.(*File))
+func (h *Heap) Push(x interface{}) {
+	*h = append(*h, x.(*File))
 }
 
 // Pop .
-func (s *SortedFiles) Pop() interface{} {
-	old := *s
+func (h *Heap) Pop() interface{} {
+	old := *h
 	n := len(old)
 	element := old[n-1]
-	*s = old[0 : n-1]
+	*h = old[0 : n-1]
 	return element
 }
