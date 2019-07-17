@@ -14,11 +14,11 @@ import (
 	"github.com/loganstone/kpick/regex"
 )
 
-func summary(foundFilePathsCnt int, scanErrorsCnt int, filesCntContainingKorean int) {
-	fmt.Printf("[%d] scanning files\n", foundFilePathsCnt)
-	fmt.Printf("[%d] error \n", scanErrorsCnt)
-	fmt.Printf("[%d] success \n", foundFilePathsCnt-scanErrorsCnt)
-	fmt.Printf("[%d] files containing korean\n", filesCntContainingKorean)
+func summary(totalCnt, errorsCnt, containedFilesCnt int) {
+	fmt.Printf("[%d] scanning files\n", totalCnt)
+	fmt.Printf("[%d] error \n", errorsCnt)
+	fmt.Printf("[%d] success \n", totalCnt-errorsCnt)
+	fmt.Printf("[%d] files containing korean\n", containedFilesCnt)
 }
 
 func main() {
@@ -42,14 +42,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	foundFilePathsCnt := len(foundFilePaths)
-	if foundFilePathsCnt == 0 {
+	totalCnt := len(foundFilePaths)
+	if totalCnt == 0 {
 		fmt.Printf("[*.%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
 		os.Exit(0)
 	}
 
 	if opts.Interactive {
-		q := fmt.Sprintf("found files [%d]. do you want to scan it? (y/n): ", foundFilePathsCnt)
+		q := fmt.Sprintf("found files [%d]. do you want to scan it? (y/n): ", totalCnt)
 		ok, err := ask.Confirm(q, "y", "n")
 		if err != nil {
 			log.Fatal(err)
@@ -97,7 +97,7 @@ func main() {
 		file.PrintFiles(filesContainingKorean)
 	}
 
-	summary(foundFilePathsCnt, scanErrorsCnt, filesContainingKorean.Len())
+	summary(totalCnt, scanErrorsCnt, filesContainingKorean.Len())
 
 	profile.Mem(opts.Memprofile)
 }
