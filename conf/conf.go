@@ -14,8 +14,8 @@ const (
 	// MustIncludeSkipPaths add directories that not need to be find,
 	// typing '-s .git' every time is annoying.
 	MustIncludeSkipPaths = ".git,tmp"
-	// KoreanPatternForRegex is a regular expression to look up Korean(Hangul)
-	KoreanPatternForRegex = "\\p{Hangul}"
+	// KoreanPattern is a regular expression to look up Korean(Hangul)
+	KoreanPattern = "\\p{Hangul}"
 )
 
 // Options .

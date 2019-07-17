@@ -11,8 +11,8 @@ import (
 
 const findAllFileExt = "*"
 
-// Find ...
-func Find(rootPath, matchFileExt string, skip *regexp.Regexp) ([]string, error) {
+// FindByFileExt ...
+func FindByFileExt(rootPath, fileExt string, skip *regexp.Regexp) ([]string, error) {
 	var paths []string
 	err := filepath.Walk(rootPath,
 		func(path string, f os.FileInfo, err error) error {
@@ -24,9 +24,9 @@ func Find(rootPath, matchFileExt string, skip *regexp.Regexp) ([]string, error) 
 				return nil
 			}
 
-			if matchFileExt != "" && matchFileExt != findAllFileExt {
+			if fileExt != "" && fileExt != findAllFileExt {
 				v := strings.Split(f.Name(), ".")
-				if v[len(v)-1] == matchFileExt {
+				if v[len(v)-1] == fileExt {
 					paths = append(paths, path)
 				}
 				return nil

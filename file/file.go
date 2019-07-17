@@ -51,9 +51,9 @@ func ScanFiles(filePaths []string, m, ig *regexp.Regexp,
 	return cp
 }
 
-// Chunks ...
-func Chunks(foundFiles []string) [][]string {
-	foundFilesCnt := len(foundFiles)
+// Chunk ...
+func Chunk(filePaths []string) [][]string {
+	filePathsCnt := len(filePaths)
 	chunkSize := limitNumber()
 
 	// NOTE: "too many open files" io error 회피
@@ -62,18 +62,18 @@ func Chunks(foundFiles []string) [][]string {
 	// 속도에는 크게 차이가 없다.
 	chunkSize = chunkSize >> 1
 
-	var chunks [][]string
+	var chunk [][]string
 	var i int
-	for i = 0; i < foundFilesCnt; i += chunkSize {
+	for i = 0; i < filePathsCnt; i += chunkSize {
 		end := i + chunkSize
 
-		if end > foundFilesCnt {
-			end = foundFilesCnt
+		if end > filePathsCnt {
+			end = filePathsCnt
 		}
 
-		chunks = append(chunks, foundFiles[i:end])
+		chunk = append(chunk, filePaths[i:end])
 	}
-	return chunks
+	return chunk
 }
 
 // PrintFiles .
@@ -82,7 +82,7 @@ func PrintFiles(files *Heap) {
 		f, ok := heap.Pop(files).(*File)
 		if ok {
 			fmt.Println(f.Path())
-			f.printFoundLines()
+			f.printMatchedLines()
 		}
 	}
 }

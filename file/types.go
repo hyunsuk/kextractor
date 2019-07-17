@@ -14,11 +14,11 @@ type afterScanFunc func(path string)
 
 // File ...
 type File struct {
-	path        string
-	matchRegex  *regexp.Regexp
-	ignoreRegex *regexp.Regexp
-	foundLines  map[int][]byte
-	scanError   error
+	path         string
+	matchRegex   *regexp.Regexp
+	ignoreRegex  *regexp.Regexp
+	matchedLines map[int][]byte
+	scanError    error
 }
 
 // Scan ...
@@ -52,7 +52,7 @@ func (f *File) Scan() {
 		lineNumber++
 		ignore := f.ignoreRegex != nil && f.ignoreRegex.Match(line)
 		if !ignore && f.matchRegex != nil && f.matchRegex.Match(line) {
-			f.foundLines[lineNumber] = line
+			f.matchedLines[lineNumber] = line
 		}
 
 		line = []byte{}
@@ -69,22 +69,22 @@ func (f *File) Error() error {
 	return f.scanError
 }
 
-// FoundLines ...
-func (f *File) FoundLines() map[int][]byte {
-	return f.foundLines
+// MatchedLines ...
+func (f *File) MatchedLines() map[int][]byte {
+	return f.matchedLines
 }
 
-func (f *File) printFoundLines() {
-	lineNumbers := make([]int, len(f.foundLines))
+func (f *File) printMatchedLines() {
+	lineNumbers := make([]int, len(f.matchedLines))
 	var i int
-	for lineNumber := range f.foundLines {
+	for lineNumber := range f.matchedLines {
 		lineNumbers[i] = lineNumber
 		i++
 	}
 
 	sort.Ints(lineNumbers)
 	for _, lineNumber := range lineNumbers {
-		lineText, _ := f.foundLines[lineNumber]
+		lineText, _ := f.matchedLines[lineNumber]
 		fmt.Printf("%d: %s\n", lineNumber, lineText)
 	}
 }
