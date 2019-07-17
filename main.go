@@ -14,7 +14,7 @@ import (
 	"github.com/loganstone/kpick/regex"
 )
 
-func showNumbers(foundFilesCnt int, scanErrorsCnt int, filesCntContainingKorean int) {
+func summary(foundFilesCnt int, scanErrorsCnt int, filesCntContainingKorean int) {
 	fmt.Printf("[%d] scanning files\n", foundFilesCnt)
 	fmt.Printf("[%d] error \n", scanErrorsCnt)
 	fmt.Printf("[%d] success \n", foundFilesCnt-scanErrorsCnt)
@@ -97,7 +97,7 @@ func main() {
 		file.PrintFiles(filesContainingKorean)
 	}
 
-	showNumbers(foundFilesCnt, scanErrorsCnt, filesContainingKorean.Len())
+	summary(foundFilesCnt, scanErrorsCnt, filesContainingKorean.Len())
 
 	profile.Mem(opts.Memprofile)
 }
