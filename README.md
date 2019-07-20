@@ -1,13 +1,15 @@
 # kpick
-날려 만들었으나 점점 개선하고 있는 한글 pick
+날려 만들었으나 점점 개선하고 있는 한글 추출기
 
 ## Getting started
 
-### Install
+### Prerequisites
 
-* Install golang ;)
+* [Install golang](https://golang.org/doc/install) ;)
 
-* Install `kpick`
+### Install and run
+
+* Install
 
 ```shell
 $ go get github.com/loganstone/kpick
