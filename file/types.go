@@ -59,12 +59,12 @@ func (f *File) Scan() {
 	}
 }
 
-// Path ...
+// Path returns a file path.
 func (f *File) Path() string {
 	return f.path
 }
 
-// Error ...
+// Error returns an error scanned file.
 func (f *File) Error() error {
 	return f.scanError
 }
