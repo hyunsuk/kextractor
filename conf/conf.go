@@ -31,6 +31,24 @@ type Options struct {
 	ErrorOnly     bool
 }
 
+func (o *Options) setDefaultValue() {
+	if o.DirToFind == "" || o.DirToFind == DefaultDir {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
+		o.DirToFind = currentDir
+	}
+
+	if o.FileExtToScan == "" {
+		o.FileExtToScan = DefaultFilenameExt
+	}
+
+	if o.SkipPaths == "" {
+		o.SkipPaths = MustIncludeSkipPaths
+	}
+}
+
 var opts Options
 
 func init() {
@@ -47,21 +65,7 @@ func init() {
 
 	flag.Parse()
 
-	if opts.DirToFind == "" || opts.DirToFind == DefaultDir {
-		currentDir, err := os.Getwd()
-		if err != nil {
-			log.Fatal(err)
-		}
-		opts.DirToFind = currentDir
-	}
-
-	if opts.FileExtToScan == "" {
-		opts.FileExtToScan = DefaultFilenameExt
-	}
-
-	if opts.SkipPaths == "" {
-		opts.SkipPaths = MustIncludeSkipPaths
-	}
+	opts.setDefaultValue()
 }
 
 // Opts .
