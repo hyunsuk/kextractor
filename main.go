@@ -18,7 +18,7 @@ func summary(totalCnt, errorsCnt, containedFilesCnt int) {
 	fmt.Printf("[%d] scanning files\n", totalCnt)
 	fmt.Printf("[%d] error \n", errorsCnt)
 	fmt.Printf("[%d] success \n", totalCnt-errorsCnt)
-	fmt.Printf("[%d] files containing korean\n", containedFilesCnt)
+	fmt.Printf("[%d] files containing Korean\n", containedFilesCnt)
 }
 
 func main() {
