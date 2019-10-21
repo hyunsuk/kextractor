@@ -1,4 +1,7 @@
-# kpick
+# Kpick
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/loganstone/kpick)](https://goreportcard.com/report/github.com/loganstone/kpick)
+
 날려 만들었으나 점점 개선하고 있는 한글 추출기
 
 ## Getting started
