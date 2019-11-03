@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("find for files [*.%s] in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
+	fmt.Printf("find files [*.%s] in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
 	foundFilePaths, err := dir.FindByFileExt(opts.DirToFind, opts.FileExtToScan, skipPaths)
 	if err != nil {
 		log.Fatal(err)
@@ -59,7 +59,7 @@ func main() {
 		}
 	}
 
-	match, ignore, err := regex.ForFileScan(conf.KoreanPattern, opts.IgnorePattern)
+	match, ignore, err := regex.FileScan(conf.KoreanPattern, opts.IgnorePattern)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func main() {
 	var scanErrorsCnt int
 	beforeFn := func(filePath string) {
 		if opts.Verbose {
-			fmt.Printf("[%s] scanning for \"%s\"\n", filePath, match.String())
+			fmt.Printf("[%s] scanning \"%s\"\n", filePath, match.String())
 		}
 	}
 	afterFn := func(filePath string) {

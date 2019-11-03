@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// ForFileScan .
-func ForFileScan(match, ignore string) (m, ig *regexp.Regexp, err error) {
+// FileScan .
+func FileScan(match, ignore string) (m, ig *regexp.Regexp, err error) {
 	if match != "" {
 		m, err = regexp.Compile(match)
 		if err != nil {
