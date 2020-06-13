@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("find files [*.%s] in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
+	fmt.Printf("find [*.%s] files in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
 	foundFilePaths, err := dir.FindByFileExt(opts.DirToFind, opts.FileExtToScan, skipPaths)
 	if err != nil {
 		log.Fatal(err)
@@ -49,7 +49,7 @@ func main() {
 	}
 
 	if opts.Interactive {
-		q := fmt.Sprintf("found files [%d]. do you want to scan it? (y/n): ", totalCnt)
+		q := fmt.Sprintf("found [%d] files. do you want to scan it? (y/n): ", totalCnt)
 		ok, err := ask.Confirm(q, "y", "n")
 		if err != nil {
 			log.Fatal(err)
