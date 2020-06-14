@@ -11,7 +11,6 @@ import (
 	"github.com/loganstone/kpick/dir"
 	"github.com/loganstone/kpick/file"
 	"github.com/loganstone/kpick/profile"
-	"github.com/loganstone/kpick/regex"
 )
 
 func summary(totalCnt, errorsCnt, containedFilesCnt int) {
@@ -31,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	skipPaths, err := regex.SkipPaths(opts.SkipPaths, ",", "|")
+	skipPaths, err := opts.SkipPathsRegex()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +58,12 @@ func main() {
 		}
 	}
 
-	match, ignore, err := regex.FileScan(conf.KoreanPattern, opts.IgnorePattern)
+	match, err := opts.Match()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ignore, err := opts.Ignore()
 	if err != nil {
 		log.Fatal(err)
 	}

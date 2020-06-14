@@ -1,9 +1,12 @@
 package conf
 
 import (
+	"errors"
 	"flag"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 )
 
 const (
@@ -47,6 +50,28 @@ func (o *Options) setDefaultValue() {
 	if o.SkipPaths == "" {
 		o.SkipPaths = MustIncludeSkipPaths
 	}
+}
+
+// SkipPathsRegex .
+func (o *Options) SkipPathsRegex() (*regexp.Regexp, error) {
+	if o.SkipPaths == "" {
+		return nil, errors.New("'SkipPaths' is empty")
+	}
+	paths := strings.Split(o.SkipPaths, ",")
+	return regexp.Compile(strings.Join(paths, "|"))
+}
+
+// Match .
+func (o *Options) Match() (*regexp.Regexp, error) {
+	return regexp.Compile(KoreanPattern)
+}
+
+// Ignore .
+func (o *Options) Ignore() (*regexp.Regexp, error) {
+	if o.IgnorePattern == "" {
+		return nil, nil
+	}
+	return regexp.Compile(o.IgnorePattern)
 }
 
 var opts Options

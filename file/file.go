@@ -73,6 +73,7 @@ func Chunk(filePaths []string) [][]string {
 
 		chunk = append(chunk, filePaths[i:end])
 	}
+
 	return chunk
 }
 

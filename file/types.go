@@ -23,6 +23,10 @@ type File struct {
 
 // Scan ...
 func (f *File) Scan() {
+	if f.matchRegex == nil {
+		return
+	}
+
 	file, err := os.Open(f.path)
 	if err != nil {
 		f.scanError = err
@@ -46,12 +50,18 @@ func (f *File) Scan() {
 
 		line = append(line, chunk...)
 		if isPrefix {
+			// NOTE(hs.lee): 줄 읽기가 다 끝나지 않았음. line 유지
 			continue
 		}
 
+		// NOTE(hs.lee): 줄 읽기가 끝남
 		lineNumber++
-		ignore := f.ignoreRegex != nil && f.ignoreRegex.Match(line)
-		if !ignore && f.matchRegex != nil && f.matchRegex.Match(line) {
+		if f.ignoreRegex != nil && f.ignoreRegex.Match(line) {
+			line = []byte{}
+			continue
+		}
+
+		if f.matchRegex.Match(line) {
 			f.matchedLines[lineNumber] = line
 		}
 
