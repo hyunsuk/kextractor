@@ -51,7 +51,7 @@ Usage of kpick:
 ## Profiling example
 
 ```shell
-$ kpick -d ../exchange-demo -f js -cpuprofile cpu.prof -memprofile mem.prof -igg //
+$ kpick -d ../some-directory -f js -cpuprofile cpu.prof -memprofile mem.prof -igg //
 $ go tool pprof -http 0.0.0.0:9000 cpu.prof
 $ go tool pprof -http 0.0.0.0:9000 mem.prof
 ```
