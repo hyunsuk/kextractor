@@ -36,12 +36,12 @@ func main() {
 	}
 
 	fmt.Printf("find [*.%s] files in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
-	foundFilePaths, err := dir.FindByFileExt(opts.DirToFind, opts.FileExtToScan, skipPaths)
+	filesPath, err := dir.FindFilesPath(opts.DirToFind, opts.FileExtToScan, skipPaths)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	totalCnt := len(foundFilePaths)
+	totalCnt := len(filesPath)
 	if totalCnt == 0 {
 		fmt.Printf("[*.%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
 		os.Exit(0)
@@ -81,7 +81,7 @@ func main() {
 			fmt.Printf("[%s] scanning done\n", filePath)
 		}
 	}
-	for _, paths := range file.Chunk(foundFilePaths) {
+	for _, paths := range file.Chunk(filesPath) {
 		for f := range file.ScanFiles(paths, match, ignore, beforeFn, afterFn) {
 			if err := f.Error(); err != nil {
 				scanErrorsCnt++

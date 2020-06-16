@@ -11,8 +11,8 @@ import (
 
 const findAllFileExt = "*"
 
-// FindByFileExt ...
-func FindByFileExt(rootPath, fileExt string, skip *regexp.Regexp) ([]string, error) {
+// FindFilesPath ...
+func FindFilesPath(rootPath, fileExt string, skip *regexp.Regexp) ([]string, error) {
 	var paths []string
 	err := filepath.Walk(rootPath,
 		func(path string, f os.FileInfo, err error) error {
