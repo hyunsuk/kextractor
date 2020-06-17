@@ -25,23 +25,22 @@ func main() {
 
 	profile.CPU(opts.Cpuprofile)
 
-	err := dir.Check(opts.DirToFind)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	skipPaths, err := opts.SkipPathsRegex()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("find [*.%s] files in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
-	filesPath, err := dir.FindFilesPath(opts.DirToFind, opts.FileExtToScan, skipPaths)
+	finder, err := dir.NewFinder(opts.DirToFind, opts.FileExtToScan, skipPaths)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	totalCnt := len(filesPath)
+	fmt.Printf("find [*.%s] files in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
+	if finder.Find() != nil {
+		log.Fatal(err)
+	}
+
+	totalCnt := len(finder.Result)
 	if totalCnt == 0 {
 		fmt.Printf("[*.%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
 		os.Exit(0)
@@ -81,7 +80,7 @@ func main() {
 			fmt.Printf("[%s] scanning done\n", filePath)
 		}
 	}
-	for _, paths := range file.Chunk(filesPath) {
+	for _, paths := range file.Chunk(finder.Result) {
 		for f := range file.ScanFiles(paths, match, ignore, beforeFn, afterFn) {
 			if err := f.Error(); err != nil {
 				scanErrorsCnt++
