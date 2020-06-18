@@ -1,31 +1,152 @@
 package file
 
 import (
+	"bufio"
 	"container/heap"
 	"fmt"
-	"math"
+	"io"
+	"os"
 	"regexp"
+	"sort"
 	"sync"
-	"syscall"
 )
 
-func newFile(path string, m, ig *regexp.Regexp) *File {
-	return &File{path, m, ig, map[int][]byte{}, nil}
+// BeforeScanFunc .
+type BeforeScanFunc func(path string)
+
+// AfterScanFunc .
+type AfterScanFunc func(path string)
+
+// File .
+type File struct {
+	path         string
+	matchRegex   *regexp.Regexp
+	ignoreRegex  *regexp.Regexp
+	matchedLines map[int][]byte
+	scanError    error
 }
 
-func limitNumber() int {
-	var rLimit syscall.Rlimit
-	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+// Scan .
+func (f *File) Scan() {
+	if f.matchRegex == nil {
+		return
+	}
+
+	file, err := os.Open(f.path)
 	if err != nil {
-		return 2048
+		f.scanError = err
+		return
 	}
-	if rLimit.Cur > math.MaxInt32 {
-		return math.MaxInt32
+
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+	line := []byte{}
+	var lineNumber int
+
+	for {
+		chunk, isPrefix, err := reader.ReadLine()
+		if err != nil {
+			if err != io.EOF {
+				f.scanError = err
+			}
+			break
+		}
+
+		line = append(line, chunk...)
+		if isPrefix {
+			// NOTE(hs.lee): 줄 읽기가 다 끝나지 않았음. line 유지
+			continue
+		}
+
+		// NOTE(hs.lee): 줄 읽기가 끝남
+		lineNumber++
+		if f.ignoreRegex != nil && f.ignoreRegex.Match(line) {
+			line = []byte{}
+			continue
+		}
+
+		if f.matchRegex.Match(line) {
+			f.matchedLines[lineNumber] = line
+		}
+
+		line = []byte{}
 	}
-	return int(rLimit.Cur)
 }
 
-// ScanFiles ...
+// Path returns a file path.
+func (f *File) Path() string {
+	return f.path
+}
+
+// Error returns an error scanned file.
+func (f *File) Error() error {
+	return f.scanError
+}
+
+// MatchedLines .
+func (f *File) MatchedLines() map[int][]byte {
+	return f.matchedLines
+}
+
+func (f *File) printMatchedLines() {
+	lineNumbers := make([]int, len(f.matchedLines))
+	var i int
+	for lineNumber := range f.matchedLines {
+		lineNumbers[i] = lineNumber
+		i++
+	}
+
+	sort.Ints(lineNumbers)
+	for _, lineNumber := range lineNumbers {
+		lineText, _ := f.matchedLines[lineNumber]
+		fmt.Printf("%d: %s\n", lineNumber, lineText)
+	}
+}
+
+// Heap .
+type Heap []*File
+
+func (h Heap) Len() int {
+	return len(h)
+}
+
+func (h Heap) Less(i, j int) bool {
+	return h[i].path < h[j].path
+}
+
+func (h Heap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+// Push .
+func (h *Heap) Push(x interface{}) {
+	*h = append(*h, x.(*File))
+}
+
+// Pop .
+func (h *Heap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	element := old[n-1]
+	*h = old[0 : n-1]
+	return element
+}
+
+// Print .
+func (h *Heap) Print() {
+	tmp := *h
+	for h.Len() > 0 {
+		f, ok := heap.Pop(h).(*File)
+		if ok {
+			fmt.Println(f.Path())
+			f.printMatchedLines()
+		}
+	}
+	*h = tmp
+}
+
+// ScanFiles .
 func ScanFiles(filePaths []string, m, ig *regexp.Regexp,
 	beforeFn BeforeScanFunc, afterFn AfterScanFunc) <-chan *File {
 	cp := make(chan *File)
@@ -37,7 +158,7 @@ func ScanFiles(filePaths []string, m, ig *regexp.Regexp,
 		go func(filePath string) {
 			defer wg.Done()
 			beforeFn(filePath)
-			f := newFile(filePath, m, ig)
+			f := &File{filePath, m, ig, map[int][]byte{}, nil}
 			f.Scan()
 			afterFn(filePath)
 			cp <- f
@@ -49,41 +170,4 @@ func ScanFiles(filePaths []string, m, ig *regexp.Regexp,
 		close(cp)
 	}()
 	return cp
-}
-
-// Chunk ...
-func Chunk(filePaths []string) [][]string {
-	filePathsCnt := len(filePaths)
-	chunkSize := limitNumber()
-
-	// NOTE: "too many open files" io error 회피
-	// 현재 열려있는 파일 수를 확인하는 것보다 더 간단하고,
-	// 프로세스당 파일 제한 값의 반만 사용하더라도
-	// 속도에는 크게 차이가 없다.
-	chunkSize = chunkSize >> 1
-
-	var chunk [][]string
-	var i int
-	for i = 0; i < filePathsCnt; i += chunkSize {
-		end := i + chunkSize
-
-		if end > filePathsCnt {
-			end = filePathsCnt
-		}
-
-		chunk = append(chunk, filePaths[i:end])
-	}
-
-	return chunk
-}
-
-// PrintFiles .
-func PrintFiles(files *Heap) {
-	for files.Len() > 0 {
-		f, ok := heap.Pop(files).(*File)
-		if ok {
-			fmt.Println(f.Path())
-			f.printMatchedLines()
-		}
-	}
 }

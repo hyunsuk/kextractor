@@ -59,14 +59,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	totalCnt := len(finder.Result)
-	if totalCnt == 0 {
+	if finder.ResultCount() == 0 {
 		fmt.Printf("[*.%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirPathToFind)
 		os.Exit(0)
 	}
 
 	if opts.Interactive {
-		q := fmt.Sprintf("found [%d] files. scan it? (y/n): ", totalCnt)
+		q := fmt.Sprintf("found [%d] files. scan it? (y/n): ", finder.ResultCount())
 		ok, err := confirm(q, "y", "n")
 		if err != nil {
 			log.Fatal(err)
@@ -99,7 +98,7 @@ func main() {
 		}
 	}
 	var scanErrorsCnt int
-	for _, paths := range file.Chunk(finder.Result) {
+	for _, paths := range finder.Chunk() {
 		for f := range file.ScanFiles(paths, match, ignore, beforeFn, afterFn) {
 			if err := f.Error(); err != nil {
 				scanErrorsCnt++
@@ -116,10 +115,10 @@ func main() {
 	}
 
 	if !opts.ErrorOnly {
-		file.PrintFiles(containKorean)
+		containKorean.Print()
 	}
 
-	summary(totalCnt, scanErrorsCnt, containKorean.Len())
+	summary(finder.ResultCount(), scanErrorsCnt, containKorean.Len())
 
 	profile.Mem(opts.Memprofile)
 }
