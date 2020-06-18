@@ -1,17 +1,36 @@
 package main
 
 import (
+	"bufio"
 	"container/heap"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
-	"github.com/loganstone/kpick/ask"
 	"github.com/loganstone/kpick/conf"
 	"github.com/loganstone/kpick/dir"
 	"github.com/loganstone/kpick/file"
 	"github.com/loganstone/kpick/profile"
 )
+
+func confirm(question, ok, cancel string) (bool, error) {
+	var input string
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf(question)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		return false, err
+	}
+	input = strings.Trim(input, " \n")
+	if input != ok && input != cancel {
+		return confirm(question, ok, cancel)
+	}
+	if input == cancel {
+		return false, nil
+	}
+	return true, nil
+}
 
 func summary(totalCnt, errorsCnt, containedFilesCnt int) {
 	fmt.Printf("[%d] scanning files\n", totalCnt)
@@ -30,25 +49,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	finder, err := dir.NewFinder(opts.DirToFind, opts.FileExtToScan, skipPaths)
+	finder, err := dir.NewFinder(opts.DirPathToFind, opts.FileExtToScan, skipPaths)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("find [*.%s] files in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
+	fmt.Printf("find [*.%s] files in [%s] directory\n", opts.FileExtToScan, opts.DirPathToFind)
 	if finder.Find() != nil {
 		log.Fatal(err)
 	}
 
 	totalCnt := len(finder.Result)
 	if totalCnt == 0 {
-		fmt.Printf("[*.%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirToFind)
+		fmt.Printf("[*.%s] file not found in [%s] directory\n", opts.FileExtToScan, opts.DirPathToFind)
 		os.Exit(0)
 	}
 
 	if opts.Interactive {
-		q := fmt.Sprintf("found [%d] files. do you want to scan it? (y/n): ", totalCnt)
-		ok, err := ask.Confirm(q, "y", "n")
+		q := fmt.Sprintf("found [%d] files. scan it? (y/n): ", totalCnt)
+		ok, err := confirm(q, "y", "n")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -67,9 +86,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	filesContainingKorean := &file.Heap{}
-	heap.Init(filesContainingKorean)
-	var scanErrorsCnt int
+	containKorean := &file.Heap{}
+	heap.Init(containKorean)
 	beforeFn := func(filePath string) {
 		if opts.Verbose {
 			fmt.Printf("[%s] scanning \"%s\"\n", filePath, match.String())
@@ -80,6 +98,7 @@ func main() {
 			fmt.Printf("[%s] scanning done\n", filePath)
 		}
 	}
+	var scanErrorsCnt int
 	for _, paths := range file.Chunk(finder.Result) {
 		for f := range file.ScanFiles(paths, match, ignore, beforeFn, afterFn) {
 			if err := f.Error(); err != nil {
@@ -91,16 +110,16 @@ func main() {
 			}
 
 			if len(f.MatchedLines()) > 0 {
-				heap.Push(filesContainingKorean, f)
+				heap.Push(containKorean, f)
 			}
 		}
 	}
 
 	if !opts.ErrorOnly {
-		file.PrintFiles(filesContainingKorean)
+		file.PrintFiles(containKorean)
 	}
 
-	summary(totalCnt, scanErrorsCnt, filesContainingKorean.Len())
+	summary(totalCnt, scanErrorsCnt, containKorean.Len())
 
 	profile.Mem(opts.Memprofile)
 }

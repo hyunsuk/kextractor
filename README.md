@@ -38,8 +38,8 @@ Usage of kpick:
   -f string
         File extension to scan. (default "*")
   -i    Interactive scanning.
-  -igg string
-        Pattern for line to ignore when scanning file.
+  -ignore string
+        Regex for line to ignore when scanning file.
   -memprofile file
         Write memory profile to file.
   -s string
@@ -51,7 +51,7 @@ Usage of kpick:
 ## Profiling example
 
 ```shell
-$ kpick -d ../some-directory -f js -cpuprofile cpu.prof -memprofile mem.prof -igg //
+$ kpick -d ../some-directory -f js -cpuprofile cpu.prof -memprofile mem.prof -ignore //
 $ go tool pprof -http 0.0.0.0:9000 cpu.prof
 $ go tool pprof -http 0.0.0.0:9000 mem.prof
 ```

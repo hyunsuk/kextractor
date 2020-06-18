@@ -9,8 +9,11 @@ import (
 	"sort"
 )
 
-type beforeScanFunc func(path string)
-type afterScanFunc func(path string)
+// BeforeScanFunc .
+type BeforeScanFunc func(path string)
+
+// AfterScanFunc .
+type AfterScanFunc func(path string)
 
 // File ...
 type File struct {

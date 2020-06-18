@@ -27,7 +27,7 @@ func limitNumber() int {
 
 // ScanFiles ...
 func ScanFiles(filePaths []string, m, ig *regexp.Regexp,
-	beforeFn beforeScanFunc, afterFn afterScanFunc) <-chan *File {
+	beforeFn BeforeScanFunc, afterFn AfterScanFunc) <-chan *File {
 	cp := make(chan *File)
 
 	var wg sync.WaitGroup

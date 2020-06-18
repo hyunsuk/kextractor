@@ -23,24 +23,24 @@ const (
 
 // Options .
 type Options struct {
-	Cpuprofile    string
-	Memprofile    string
-	DirToFind     string
-	FileExtToScan string
-	SkipPaths     string
-	IgnorePattern string
-	Verbose       bool
-	Interactive   bool
-	ErrorOnly     bool
+	Cpuprofile        string
+	Memprofile        string
+	DirPathToFind     string
+	FileExtToScan     string
+	SkipPaths         string
+	IgnoreRegexString string
+	Verbose           bool
+	Interactive       bool
+	ErrorOnly         bool
 }
 
 func (o *Options) setDefaultValue() {
-	if o.DirToFind == "" || o.DirToFind == DefaultDir {
+	if o.DirPathToFind == "" || o.DirPathToFind == DefaultDir {
 		currentDir, err := os.Getwd()
 		if err != nil {
 			log.Fatal(err)
 		}
-		o.DirToFind = currentDir
+		o.DirPathToFind = currentDir
 	}
 
 	if o.FileExtToScan == "" {
@@ -68,10 +68,10 @@ func (o *Options) Match() (*regexp.Regexp, error) {
 
 // Ignore .
 func (o *Options) Ignore() (*regexp.Regexp, error) {
-	if o.IgnorePattern == "" {
+	if o.IgnoreRegexString == "" {
 		return nil, nil
 	}
-	return regexp.Compile(o.IgnorePattern)
+	return regexp.Compile(o.IgnoreRegexString)
 }
 
 var opts Options
@@ -80,10 +80,10 @@ func init() {
 	flag.StringVar(&opts.Cpuprofile, "cpuprofile", "", "Write cpu profile to `file`.")
 	flag.StringVar(&opts.Memprofile, "memprofile", "", "Write memory profile to `file`.")
 
-	flag.StringVar(&opts.DirToFind, "d", DefaultDir, "Directory to find files.")
+	flag.StringVar(&opts.DirPathToFind, "d", DefaultDir, "Directory to find files.")
 	flag.StringVar(&opts.FileExtToScan, "f", DefaultFilenameExt, "Filename extension to scan.")
 	flag.StringVar(&opts.SkipPaths, "s", MustIncludeSkipPaths, "Directories to skip walk.(delimiter ',')")
-	flag.StringVar(&opts.IgnorePattern, "igg", "", "Pattern for line to ignore when scanning file.")
+	flag.StringVar(&opts.IgnoreRegexString, "ignore", "", "Regex for line to ignore when scanning file.")
 	flag.BoolVar(&opts.Verbose, "v", false, "Make some output more verbose.")
 	flag.BoolVar(&opts.Interactive, "i", false, "Interactive scanning.")
 	flag.BoolVar(&opts.ErrorOnly, "e", false, "Make output error only.")
@@ -94,6 +94,6 @@ func init() {
 }
 
 // Opts .
-func Opts() Options {
-	return opts
+func Opts() *Options {
+	return &opts
 }
