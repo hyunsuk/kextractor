@@ -21,6 +21,9 @@ const (
 	KoreanPattern = "\\p{Hangul}"
 )
 
+// ErrSkipPathsIsRequired .
+var ErrSkipPathsIsRequired = errors.New("'SkipPaths' is required")
+
 // Options .
 type Options struct {
 	Cpuprofile        string
@@ -55,7 +58,7 @@ func (o *Options) setDefaultValue() {
 // SkipPathsRegex .
 func (o *Options) SkipPathsRegex() (*regexp.Regexp, error) {
 	if o.SkipPaths == "" {
-		return nil, errors.New("'SkipPaths' is empty")
+		return nil, ErrSkipPathsIsRequired
 	}
 	paths := strings.Split(o.SkipPaths, ",")
 	return regexp.Compile(strings.Join(paths, "|"))
@@ -87,13 +90,11 @@ func init() {
 	flag.BoolVar(&opts.Verbose, "v", false, "Make some output more verbose.")
 	flag.BoolVar(&opts.Interactive, "i", false, "Interactive scanning.")
 	flag.BoolVar(&opts.ErrorOnly, "e", false, "Make output error only.")
-
-	flag.Parse()
-
-	opts.setDefaultValue()
 }
 
 // Opts .
 func Opts() *Options {
+	flag.Parse()
+	opts.setDefaultValue()
 	return &opts
 }
