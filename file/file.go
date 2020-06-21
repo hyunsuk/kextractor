@@ -134,16 +134,14 @@ func (h *Heap) Pop() interface{} {
 }
 
 // Print .
-func (h *Heap) Print() {
-	tmp := *h
+func (h Heap) Print() {
 	for h.Len() > 0 {
-		f, ok := heap.Pop(h).(*File)
+		f, ok := heap.Pop(&h).(*File)
 		if ok {
 			fmt.Println(f.Path())
 			f.printMatchedLines()
 		}
 	}
-	*h = tmp
 }
 
 // ScanFiles .
