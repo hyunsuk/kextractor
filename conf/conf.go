@@ -30,37 +30,34 @@ type Options struct {
 	Memprofile        string
 	DirPathToFind     string
 	FileExtToScan     string
-	SkipPaths         string
 	IgnoreRegexString string
 	Verbose           bool
 	Interactive       bool
 	ErrorOnly         bool
+
+	skipPaths string
 }
 
-func (o *Options) setDefaultValue() {
-	if o.DirPathToFind == "" || o.DirPathToFind == DefaultDir {
-		currentDir, err := os.Getwd()
+func (o *Options) validate() {
+	if o.DirPathToFind == "" || o.FileExtToScan == "" || o.skipPaths == "" {
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
+	if o.DirPathToFind == DefaultDir {
+		dir, err := os.Getwd()
 		if err != nil {
 			log.Fatal(err)
 		}
-		o.DirPathToFind = currentDir
-	}
-
-	if o.FileExtToScan == "" {
-		o.FileExtToScan = DefaultFilenameExt
-	}
-
-	if o.SkipPaths == "" {
-		o.SkipPaths = MustIncludeSkipPaths
+		o.DirPathToFind = dir
 	}
 }
 
 // SkipPathsRegex .
 func (o *Options) SkipPathsRegex() (*regexp.Regexp, error) {
-	if o.SkipPaths == "" {
+	if o.skipPaths == "" {
 		return nil, ErrSkipPathsIsRequired
 	}
-	paths := strings.Split(o.SkipPaths, ",")
+	paths := strings.Split(o.skipPaths, ",")
 	return regexp.Compile(strings.Join(paths, "|"))
 }
 
@@ -85,7 +82,7 @@ func init() {
 
 	flag.StringVar(&opts.DirPathToFind, "d", DefaultDir, "Directory to find files.")
 	flag.StringVar(&opts.FileExtToScan, "f", DefaultFilenameExt, "Filename extension to scan.")
-	flag.StringVar(&opts.SkipPaths, "s", MustIncludeSkipPaths, "Directories to skip walk.(delimiter ',')")
+	flag.StringVar(&opts.skipPaths, "s", MustIncludeSkipPaths, "Directories to skip walk.(delimiter ',')")
 	flag.StringVar(&opts.IgnoreRegexString, "ignore", "", "Regex for line to ignore when scanning file.")
 	flag.BoolVar(&opts.Verbose, "v", false, "Make some output more verbose.")
 	flag.BoolVar(&opts.Interactive, "i", false, "Interactive scanning.")
@@ -95,6 +92,6 @@ func init() {
 // Opts .
 func Opts() *Options {
 	flag.Parse()
-	opts.setDefaultValue()
+	opts.validate()
 	return &opts
 }

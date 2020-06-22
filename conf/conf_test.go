@@ -16,7 +16,7 @@ func TestOpts(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, opts.DirPathToFind)
 	assert.Equal(t, DefaultFilenameExt, opts.FileExtToScan)
-	assert.Equal(t, MustIncludeSkipPaths, opts.SkipPaths)
+	assert.Equal(t, MustIncludeSkipPaths, opts.skipPaths)
 	assert.Equal(t, "", opts.IgnoreRegexString)
 	assert.Equal(t, false, opts.Verbose)
 	assert.Equal(t, false, opts.Interactive)
@@ -31,9 +31,11 @@ func TestSkipPathsRegex(t *testing.T) {
 	assert.True(t, skip.Match([]byte(".tmp")))
 	assert.False(t, skip.Match([]byte("invalid")))
 
-	opts.SkipPaths = ""
+	tmp := opts.skipPaths
+	opts.skipPaths = ""
 	_, err = opts.SkipPathsRegex()
 	assert.Error(t, ErrSkipPathsIsRequired, err)
+	opts.skipPaths = tmp
 }
 
 func TestMatch(t *testing.T) {
