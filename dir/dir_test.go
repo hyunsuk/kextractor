@@ -28,5 +28,5 @@ func TestNewFinder(t *testing.T) {
 	assert.NotNil(t, finder)
 	err = finder.Find()
 	assert.NoError(t, err)
-	assert.Equal(t, 14, finder.ResultCount())
+	assert.Equal(t, 17, finder.ResultCount())
 }
