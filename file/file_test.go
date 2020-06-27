@@ -75,3 +75,26 @@ func TestHeap(t *testing.T) {
 	assert.True(t, ok)
 	assert.True(t, file.Path() == paths[0])
 }
+
+func TestScan(t *testing.T) {
+	paths := []string{"test1.md", "test2.md"}
+
+	match, err := regexp.Compile("\\p{Hangul}")
+	assert.NoError(t, err)
+
+	ignore, err := regexp.Compile("#")
+	assert.NoError(t, err)
+
+	files := &Heap{}
+	heap.Init(files)
+
+	f := &File{paths[0], match, ignore, map[int][]byte{}, nil}
+	f.Scan()
+	assert.NoError(t, f.scanError)
+	assert.Equal(t, 1, len(f.MatchedLines()))
+
+	f = &File{paths[1], match, ignore, map[int][]byte{}, nil}
+	f.Scan()
+	assert.NoError(t, f.scanError)
+	assert.Equal(t, 0, len(f.MatchedLines()))
+}
