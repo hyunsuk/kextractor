@@ -48,6 +48,12 @@ Usage of kpick:
 
 ```
 
+## Running Tests
+
+```shell
+$ go test -v -count=1 ./...  # no cached
+```
+
 ## Profiling example
 
 ```shell
