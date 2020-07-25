@@ -52,7 +52,8 @@ func (o *Options) validate() {
 	}
 }
 
-// SkipPathsRegex .
+// SkipPathsRegex parses a skip path regular expression and returns,
+// if successful, a Regexp object that can be used to match against text.
 func (o *Options) SkipPathsRegex() (*regexp.Regexp, error) {
 	if o.skipPaths == "" {
 		return nil, ErrSkipPathsIsRequired
