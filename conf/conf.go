@@ -62,7 +62,8 @@ func (o *Options) SkipPathsRegex() (*regexp.Regexp, error) {
 	return regexp.Compile(strings.Join(paths, "|"))
 }
 
-// Match .
+// Match parses a Korean regular expression and returns,
+// if successful, a Regexp object that can be used to match against text.
 func (o *Options) Match() (*regexp.Regexp, error) {
 	return regexp.Compile(KoreanPattern)
 }
