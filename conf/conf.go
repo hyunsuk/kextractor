@@ -68,7 +68,8 @@ func (o *Options) Match() (*regexp.Regexp, error) {
 	return regexp.Compile(KoreanPattern)
 }
 
-// Ignore .
+// Ignore parses a ignore regular expression and returns,
+// if successful, a Regexp object that can be used to match against text.
 func (o *Options) Ignore() (*regexp.Regexp, error) {
 	if o.IgnoreRegexString == "" {
 		return nil, nil
