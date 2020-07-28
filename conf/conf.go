@@ -92,7 +92,7 @@ func init() {
 	flag.BoolVar(&opts.ErrorOnly, "e", false, "Make output error only.")
 }
 
-// Opts .
+// Opts returns the Values needed to operate application.
 func Opts() *Options {
 	flag.Parse()
 	opts.validate()
