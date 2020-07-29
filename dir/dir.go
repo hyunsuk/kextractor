@@ -48,7 +48,8 @@ func check(path string) error {
 	return nil
 }
 
-// Finder .
+// Finder saves the necessary information and
+// the found file when searching for a file containing Korean.
 type Finder struct {
 	path      string
 	fileExt   string
