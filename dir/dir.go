@@ -70,7 +70,8 @@ func NewFinder(path, fileExt string, skipPaths *regexp.Regexp) (*Finder, error) 
 	}, nil
 }
 
-// Find .
+// Find finds and saves the same file
+// with the specified file extension in the specified path and all sub paths.
 func (f *Finder) Find() error {
 	return filepath.Walk(f.path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
