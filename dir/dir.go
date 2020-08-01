@@ -57,7 +57,7 @@ type Finder struct {
 	result    []string
 }
 
-// NewFinder .returns a new Finder object.
+// NewFinder returns a new Finder object.
 // Check the "path" is correct before returning.
 func NewFinder(path, fileExt string, skipPaths *regexp.Regexp) (*Finder, error) {
 	if err := check(path); err != nil {
