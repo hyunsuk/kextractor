@@ -95,7 +95,8 @@ func (f *Finder) Find() error {
 	})
 }
 
-// ResultCount .
+// ResultCount returns the number of results found with Find.
+// If Find is not called, it returns 0.
 func (f *Finder) ResultCount() int {
 	return len(f.result)
 }
