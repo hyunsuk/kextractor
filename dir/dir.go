@@ -101,7 +101,9 @@ func (f *Finder) ResultCount() int {
 	return len(f.result)
 }
 
-// Chunk .
+// Chunk returns the slice value obtained by dividing
+// the result value found with Find by the number of files
+// that can be read by the operating system at once.
 func (f *Finder) Chunk() [][]string {
 	filePathsCnt := f.ResultCount()
 	chunkSize := limitNumber()
