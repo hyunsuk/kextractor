@@ -17,7 +17,7 @@ type BeforeScanFunc func(path string)
 // AfterScanFunc .
 type AfterScanFunc func(path string)
 
-// File .
+// File finds and stores the line matching the specified regular expression.
 type File struct {
 	path         string
 	matchRegex   *regexp.Regexp
