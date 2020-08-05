@@ -26,7 +26,10 @@ type File struct {
 	scanError    error
 }
 
-// Scan .
+// Scan checks the contents of the file line by line to see
+// if it matches the regular expression.
+// When it finds a line that matches the regular expression,
+// it stores the contents of the line with the line number.
 func (f *File) Scan() {
 	if f.matchRegex == nil {
 		return
