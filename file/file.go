@@ -87,7 +87,7 @@ func (f *File) Error() error {
 	return f.scanError
 }
 
-// MatchedLines .
+// MatchedLines returns the result of Scan.
 func (f *File) MatchedLines() map[int][]byte {
 	return f.matchedLines
 }
