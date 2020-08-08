@@ -107,7 +107,7 @@ func (f *File) printMatchedLines() {
 	}
 }
 
-// Heap .
+// Heap is a data type for sorting the file list in ascending order by name.
 type Heap []*File
 
 func (h Heap) Len() int {
