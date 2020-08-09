@@ -136,7 +136,7 @@ func (h *Heap) Pop() interface{} {
 	return element
 }
 
-// Print .
+// Print is prints data of Heap.
 func (h Heap) Print() {
 	for h.Len() > 0 {
 		f, ok := heap.Pop(&h).(*File)
